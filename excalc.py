@@ -18,7 +18,7 @@ tokens = ('INT', 'FLOAT',
 		  'LPAREN', 'RPAREN')
 
 def t_FLOAT(t):
-	r'\d\.\d*'
+	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
 	t.value = float(t.value)
 	return t
 
@@ -84,19 +84,10 @@ def p_exp_float(p):
 
 def p_exp_uminus(p):
 	'exp : MINUS exp %prec UMINUS'
-	# Matches (empty) -exp and uses precedence UMINUS instead of the usual MINUS
+	# Matches -exp and uses precedence UMINUS instead of the usual MINUS
 	p[0] = ("uminus", p[2])
 
-
-
-
-
-
-
-
-
-
-
+# End of parser definitions
 
 def evaluate(expr):
 	""" Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
