@@ -101,8 +101,8 @@ def p_exp_uminus(p):
 def evaluate(expr):
 	""" Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
 
-	lexer = lex.lex(optimize=False)
-	parser = yacc.yacc()
+	lexer = lex.lex(debug=False)
+	parser = yacc.yacc(debug=False)
 	parse_tree = parser.parse(expr, lexer=lexer)
 
 	return evaluate_tree(parse_tree)
