@@ -15,7 +15,8 @@ tokens = ('INT', 'FLOAT',
 		  'PLUS', 'MINUS',
 		  'TIMES', 'DIVIDE',
 		  'EXPONENT',
-		  'LPAREN', 'RPAREN')
+		  'LPAREN', 'RPAREN',
+		  'EQEQ')
 
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
@@ -34,6 +35,7 @@ t_DIVIDE = r'/'
 t_EXPONENT = r'\^'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
+t_EQEQ = r'=='
 
 t_ignore = "\t\r\n "
 
@@ -43,6 +45,7 @@ def t_error(t):
 # Stuff used by the parser
 
 precedence = (
+	  ("left", "EQEQ"),
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
 	  ("right", "UMINUS"),
@@ -66,7 +69,8 @@ def p_exp_binop(p):
 	       | exp MINUS exp
 	       | exp TIMES exp
 	       | exp DIVIDE exp
-	       | exp EXPONENT exp'''
+	       | exp EXPONENT exp
+	       | exp EQEQ exp'''
 
 	p[0] = ("binop", p[1], p[2], p[3])
 
@@ -118,6 +122,8 @@ def evaluate_tree(tree):
 			return left / right
 		elif op == '^':
 			return left ** right
+		elif op == '==':
+			return left == right
 
 	elif kind == "int":
 		return tree[1]
