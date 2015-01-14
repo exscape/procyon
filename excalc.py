@@ -3,10 +3,14 @@
 import sys
 from ply import lex, yacc
 
+# TODO: unary minus
 # TODO: comments, single and multi-line
 # TODO: variables/assignment
-# TODO: pre-defined functions (sin, cos, tan, exp and a few other common ones)
+# TODO: pre-defined functions (sqrt, sin, cos, tan, exp and a few other common ones)
 # TODO: pre-defined *variables* (e, pi)
+# TODO: error handling (lexing errors, syntax errors)
+
+# Stuff used by the lexer
 
 tokens = ('INT', 'FLOAT',
 		  'PLUS', 'MINUS',
@@ -37,8 +41,46 @@ t_ignore = "\t\r\n "
 def t_error(t):
 	print ('t_error:', t)
 
+# Stuff used by the parser
+
+precedence = (
+	  ("left", "PLUS", "MINUS"),
+	  ("left", "TIMES", "DIVIDE"),
+	  ("left", "EXPONENT")
+	  )
+
+def p_error(p):
+	print ('p_error:', p)
 
 
+#
+# Here's the grammar used:
+# exp -> exp (PLUS|MINUS|TIMES|DIVIDE|EXPONENT) exp
+# exp -> ( exp )
+# exp -> number
+# number -> INT | FLOAT
+#
+
+def p_exp_binop(p):
+	'''exp : exp PLUS exp
+	       | exp MINUS exp
+	       | exp TIMES exp
+	       | exp DIVIDE exp
+	       | exp EXPONENT exp'''
+
+	p[0] = ("binop", p[1], p[2], p[3])
+
+def p_exp_paren(p):
+	'exp : LPAREN exp RPAREN'
+	p[0] = p[2]
+
+def p_exp_int(p):
+	'exp : INT'
+	p[0] = ("int", p[1])
+
+def p_exp_float(p):
+	'exp : FLOAT'
+	p[0] = ("float", p[1])
 
 
 
@@ -63,6 +105,13 @@ def evaluate(expr):
 		if not tok: break
 		print (tok)
 
+	parser = yacc.yacc()
+
+	parse_tree = parser.parse(expr, lexer=lexer)
+
+	return evaluate_tree(parse_tree)
+
+def evaluate_tree(tree):
 	return 0
 
 if __name__ == '__main__':
