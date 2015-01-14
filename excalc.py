@@ -12,11 +12,12 @@ import math
 # * Uses integer math where possible (for exact results)
 # * Integer sizes limited by amount of RAM only (floats are *not* arbitrary precision)
 # * Proper order of operations
-# * Supports built-in functions (sqrt, sin, cos, tan, exp, log/log10/log2)
+# * Supports built-in functions (sqrt, sin, cos, tan, and so on, see .help for a complete list)
 # * Built-in constants: e, pi
 # * Supports variables
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
+# * .help command
 # * .vars command shows the value of all variables (except unchanged built-ins)
 
 # TODO: support custom functions?
@@ -54,7 +55,7 @@ t_RPAREN = r'\)'
 t_EQEQ = r'=='
 t_ASSIGN = r'='
 t_COMMA = r','
-t_COMMAND = r'^.[a-zA-Z]+\s*$'
+t_COMMAND = r'^\.[a-zA-Z]+\s*$'
 
 def t_HASH(t):
 	r'\#.*'
@@ -146,7 +147,7 @@ def p_command(p):
 # End of parser definitions
 
 # Built-in functions and number of arguments
-__functions = {'sin': 1, 'cos': 1, 'tan': 1, 'exp': 1, 'sqrt': 1, 'log': 1, 'log10': 1, 'log2': 1, 'atan2': 2}
+__functions = {'sin': 1, 'cos': 1, 'tan': 1, 'exp': 1, 'sqrt': 1, 'log': 1, 'log10': 1, 'log2': 1, 'atan2': 2, 'abs': 1}
 
 # Built-in constants; there are overwritable by design
 __initial_state = {'e': math.e, 'pi': math.pi}
@@ -217,8 +218,14 @@ def evaluate_tree(tree):
 
 		args = [evaluate_tree(arg) for arg in args]
 
-		func = getattr(math, func_name)
+		func = None
+		try:
+			func = getattr(math, func_name)
+		except AttributeError:
+			func = getattr(sys.modules['builtins'], func_name)
+
 		return func(*args)
+
 	elif kind == "command":
 		cmd_name = tree[1]
 		if cmd_name == 'vars':
@@ -229,6 +236,21 @@ def evaluate_tree(tree):
 
 			for var in sorted(vars):
 				print("{}:\t{}".format(var, __state[var]))
+		elif cmd_name == 'help':
+			print("# Supported operators: + - * / ^ ( ) = ==")
+			print("# = assigns, == tests equality, e.g.:")
+			print("# a = 5")
+			print("# a == 5 # returns True")
+			print("#")
+			print("# Supported commands:")
+			print("# .help - this text")
+			print("# .vars - show all variables, except non-modified builtins")
+			print("#")
+			print("# Supported functions:")
+			print("# " + ", ".join(sorted(__functions)))
+			print("#")
+			print("# Built-in constants (names are re-assignable):")
+			print("# " + ", ".join(sorted(__initial_state)))
 		else:
 			raise SyntaxError("Unknown command {}".format(cmd_name))
 
