@@ -162,6 +162,9 @@ __state = __initial_state.copy()
 def evaluate(expr):
 	""" Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
 
+	if len(expr.rstrip()) == 0:
+		return None
+
 	lexer = lex.lex(debug=False)
 	parser = yacc.yacc(debug=False)
 	parse_tree = parser.parse(expr, lexer=lexer)
@@ -257,6 +260,7 @@ def evaluate_tree(tree):
 			print("#")
 			print("# Built-in constants (names are re-assignable):")
 			print("# " + ", ".join(sorted(__initial_state)))
+			print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
 		else:
 			raise SyntaxError("Unknown command {}".format(cmd_name))
 
