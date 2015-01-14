@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, readline
 from ply import lex, yacc
 
 # TODO: unary minus
@@ -97,16 +97,8 @@ def p_exp_float(p):
 def evaluate(expr):
 	""" Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
 
-	print ('Lexing...')
 	lexer = lex.lex()
-	lexer.input(expr)
-	while True:
-		tok = lexer.token()
-		if not tok: break
-		print (tok)
-
 	parser = yacc.yacc()
-
 	parse_tree = parser.parse(expr, lexer=lexer)
 
 	return evaluate_tree(parse_tree)
@@ -114,7 +106,6 @@ def evaluate(expr):
 def evaluate_tree(tree):
 	""" Recursively evalutates a parse tree and returns the result. """
 	kind = tree[0]
-	print("{}: {}".format( kind, tree[1:]))
 
 	if kind == "binop":
 		(left_child, op, right_child) = tree[1:]
@@ -142,19 +133,9 @@ def evaluate_tree(tree):
 	sys.exit(1)
 
 if __name__ == '__main__':
-	input_str = "1 + ((5 - 3)^2)^(3-1+1)"
-	expected = 65
-
-	if len(sys.argv) == 2:
-		input_str = sys.argv[1]
-		expected = None
-
-	result = evaluate(input_str)
-
-	if expected is not None:
-		if expected == result:
-			print ("Success!")
-		else:
-			print ("Failed! Expected {}, got {}".format(expected, result))
-	else:
-		print ("Result: {}".format(result))
+	while True:
+		input_str = raw_input('>>> ')
+		if input_str == "":
+			sys.exit(0)
+		result = evaluate(input_str)
+		print result
