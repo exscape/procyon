@@ -3,7 +3,6 @@
 import sys, readline
 from ply import lex, yacc
 
-# TODO: unary minus
 # TODO: comments, single and multi-line
 # TODO: variables/assignment
 # TODO: pre-defined functions (sqrt, sin, cos, tan, exp and a few other common ones)
@@ -46,7 +45,8 @@ def t_error(t):
 precedence = (
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
-	  ("left", "EXPONENT")
+	  ("right", "UMINUS"),
+	  ("left", "EXPONENT"),
 	  )
 
 def p_error(p):
@@ -82,6 +82,10 @@ def p_exp_float(p):
 	'exp : FLOAT'
 	p[0] = ("float", p[1])
 
+def p_exp_uminus(p):
+	'exp : MINUS exp %prec UMINUS'
+	# Matches (empty) -exp and uses precedence UMINUS instead of the usual MINUS
+	p[0] = ("uminus", p[2])
 
 
 
@@ -97,7 +101,7 @@ def p_exp_float(p):
 def evaluate(expr):
 	""" Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
 
-	lexer = lex.lex()
+	lexer = lex.lex(optimize=False)
 	parser = yacc.yacc()
 	parse_tree = parser.parse(expr, lexer=lexer)
 
@@ -128,14 +132,16 @@ def evaluate_tree(tree):
 		return tree[1]
 	elif kind == "float":
 		return tree[1]
+	elif kind == "uminus":
+		return -evaluate_tree(tree[1])
 
 	print("ERROR: reached end of evaluate_tree for tree", tree)
 	sys.exit(1)
 
 if __name__ == '__main__':
 	while True:
-		input_str = raw_input('>>> ')
+		input_str = input('>>> ')
 		if input_str == "":
 			sys.exit(0)
 		result = evaluate(input_str)
-		print result
+		print (result)
