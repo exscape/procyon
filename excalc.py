@@ -138,7 +138,9 @@ def evaluate(expr):
 	parser = yacc.yacc(debug=False)
 	parse_tree = parser.parse(expr, lexer=lexer)
 
-	return evaluate_tree(parse_tree)
+	result = evaluate_tree(parse_tree)
+	__state['_'] = result
+	return result
 
 def evaluate_tree(tree):
 	""" Recursively evalutates a parse tree and returns the result. """
