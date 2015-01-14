@@ -4,9 +4,19 @@ import sys, readline
 from ply import lex, yacc
 import math
 
+# Simple calculator; written for Python 3 (3.4.2).
+# Thomas Backman (serenity@exscape.org), 2015-01-14
+#
+# Features:
+# * Uses integer math where possible (for exact results)
+# * Proper order of operations
+# * Supports built-in functions (sqrt, sin, cos, tan, exp, log/log10/log2)
+# * Built-in constants: e, pi
+# * Supports variables
+# * Value of last evaluation is accessible as _
+
 # TODO: comments, single and multi-line...?
-# TODO: pre-defined functions (sqrt, sin, cos, tan, exp and a few other common ones)
-# TODO: error handling (lexing errors, syntax errors)
+# TODO: support custom functions?
 
 # Stuff used by the lexer
 
@@ -42,7 +52,7 @@ t_ASSIGN = r'='
 t_ignore = "\t\r\n "
 
 def t_error(t):
-	print ('t_error:', t)
+	raise SyntaxError('Unexpected {} at input position {}'.format(t.value[0], t.lexpos))
 
 # Stuff used by the parser
 
@@ -56,7 +66,10 @@ precedence = (
 	  )
 
 def p_error(p):
-	print ('p_error:', p)
+	if p is None:
+		raise SyntaxError('Unexpected end of input; unbalanced parenthesis or missing argument(s)?')
+	else:
+		raise SyntaxError('Unexpected {} at input position {}'.format(p.type, p.lexpos))
 
 def p_exp_binop(p):
 	'''exp : exp PLUS exp
@@ -166,6 +179,9 @@ if __name__ == '__main__':
 				print ("Error: {}".format(str(e)[1:-1]))
 			except OverflowError:
 				print ("Overflow: result is out of range")
+			except SyntaxError as e:
+				print("Syntax error: {}".format(str(e)))
+
 		except (KeyboardInterrupt, EOFError):
 			print("")
 			sys.exit(0)
