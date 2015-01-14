@@ -112,10 +112,37 @@ def evaluate(expr):
 	return evaluate_tree(parse_tree)
 
 def evaluate_tree(tree):
-	return 0
+	""" Recursively evalutates a parse tree and returns the result. """
+	kind = tree[0]
+	print("{}: {}".format( kind, tree[1:]))
+
+	if kind == "binop":
+		(left_child, op, right_child) = tree[1:]
+
+		left = evaluate_tree(left_child)
+		right = evaluate_tree(right_child)
+
+		if   op == '+':
+			return left + right
+		elif op == '-':
+			return left - right
+		elif op == '*':
+			return left * right
+		elif op == '/':
+			return left / right
+		elif op == '^':
+			return left ** right
+
+	elif kind == "int":
+		return tree[1]
+	elif kind == "float":
+		return tree[1]
+
+	print("ERROR: reached end of evaluate_tree for tree", tree)
+	sys.exit(1)
 
 if __name__ == '__main__':
-	input_str = "1 + ((5 - 3.2)^2)^(3-1+1)"
+	input_str = "1 + ((5 - 3)^2)^(3-1+1)"
 	expected = 65
 
 	if len(sys.argv) == 2:
