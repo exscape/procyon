@@ -52,7 +52,7 @@ precedence = (
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
 	  ("right", "UMINUS"),
-	  ("left", "EXPONENT"),
+	  ("right", "EXPONENT"),
 	  )
 
 def p_error(p):
