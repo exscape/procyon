@@ -17,6 +17,7 @@ import math
 # * Supports variables
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
+# * .vars command shows the value of all variables (except unchanged built-ins)
 
 # TODO: support custom functions?
 
@@ -29,7 +30,8 @@ tokens = ('INT', 'FLOAT',
 		  'LPAREN', 'RPAREN',
 		  'ASSIGN', 'EQEQ',
 		  'IDENT',
-		  'COMMA', 'HASH')
+		  'COMMA', 'HASH',
+		  'COMMAND')
 
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
@@ -52,6 +54,7 @@ t_RPAREN = r'\)'
 t_EQEQ = r'=='
 t_ASSIGN = r'='
 t_COMMA = r','
+t_COMMAND = r'^.[a-zA-Z]+\s*$'
 
 def t_HASH(t):
 	r'\#.*'
@@ -66,7 +69,7 @@ def t_error(t):
 # Stuff used by the parser
 
 precedence = (
-	  ("left", "ASSIGN"),
+	  ("right", "ASSIGN"),
 	  ("left", "EQEQ"),
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
@@ -131,13 +134,23 @@ def p_assign(p):
 	'exp : ident ASSIGN exp'
 	p[0] = ("assign", p[1], p[3])
 
+# Ugly, but it works (shouldn't really be an expression)
+def p_exp_command(p):
+	'exp : command'
+	p[0] = p[1]
+
+def p_command(p):
+	'command : COMMAND'
+	p[0] = ("command", p[1][1:])
+
 # End of parser definitions
 
 # Built-in functions and number of arguments
-__functions = {'sin': 1, 'cos': 1, 'tan': 1, 'exp': 1, 'sqrt': 1, 'log': 1, 'log10': 1, 'log2': 1}
+__functions = {'sin': 1, 'cos': 1, 'tan': 1, 'exp': 1, 'sqrt': 1, 'log': 1, 'log10': 1, 'log2': 1, 'atan2': 2}
 
 # Built-in constants; there are overwritable by design
-__state = {'e': math.e, 'pi': math.pi}
+__initial_state = {'e': math.e, 'pi': math.pi}
+__state = __initial_state.copy()
 
 def evaluate(expr):
 	""" Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
@@ -206,6 +219,20 @@ def evaluate_tree(tree):
 
 		func = getattr(math, func_name)
 		return func(*args)
+	elif kind == "command":
+		cmd_name = tree[1]
+		if cmd_name == 'vars':
+			# Bit of a mess... Fetch each variable name.
+			# Ignore _, and ignore pre-defined constants (e.g. e, pi)
+			# *UNLESS* the user has assigned other values to those names.
+			vars = [v for v in __state if (v != '_' and not (v in __initial_state and __initial_state[v] == __state[v]))]
+
+			for var in sorted(vars):
+				print("{}:\t{}".format(var, __state[var]))
+		else:
+			raise SyntaxError("Unknown command {}".format(cmd_name))
+
+		return None
 
 	print("BUG: reached end of evaluate_tree for tree:", tree)
 	sys.exit(1)
@@ -216,7 +243,9 @@ if __name__ == '__main__':
 			input_str = input('>>> ')
 			try:
 				result = evaluate(input_str)
-				print (result)
+				if result is not None:
+					# Commands return None
+					print (result)
 			except KeyError as e:
 				print ("Error: {}".format(str(e)[1:-1]))
 			except OverflowError:
