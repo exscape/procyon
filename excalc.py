@@ -26,7 +26,7 @@ tokens = ('INT', 'FLOAT',
 		  'EXPONENT',
 		  'LPAREN', 'RPAREN',
 		  'ASSIGN', 'EQEQ',
-		  'IDENT')
+		  'IDENT', 'COMMA')
 
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
@@ -48,6 +48,7 @@ t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_EQEQ = r'=='
 t_ASSIGN = r'='
+t_COMMA = r','
 
 t_ignore = "\t\r\n "
 
@@ -102,6 +103,18 @@ def p_exp_uminus(p):
 	# Matches -exp and uses precedence UMINUS instead of the usual MINUS
 	p[0] = ("uminus", p[2])
 
+def p_exp_func(p):
+	'exp : ident LPAREN args RPAREN'
+	p[0] = ("func", p[1], p[3])
+
+def p_args_many(p):
+	'args : args COMMA args'
+	p[0] = p[1] + p[3]
+
+def p_args_one(p):
+	'args : exp'
+	p[0] = [p[1]]
+
 def p_ident(p):
 	'ident : IDENT'
 	p[0] = ("ident", p[1])
@@ -112,6 +125,10 @@ def p_assign(p):
 
 # End of parser definitions
 
+# Built-in functions and number of arguments
+__functions = {'sin': 1, 'cos': 1, 'tan': 1, 'exp': 1, 'sqrt': 1, 'log': 1, 'log10': 1, 'log2': 1}
+
+# Built-in constants; there are overwritable by design
 __state = {'e': math.e, 'pi': math.pi}
 
 def evaluate(expr):
@@ -160,10 +177,27 @@ def evaluate_tree(tree):
 			raise KeyError('unknown variable name "{}"'.format(name))
 	elif kind == "assign":
 		name = tree[1][1]
+
+		if name in __functions:
+			raise KeyError('cannot assign to built-in function "{}"'.format(name))
 		val = tree[2]
 		__state[name] = evaluate_tree(val)
 
 		return __state[name]
+	elif kind == "func":
+		func_name = tree[1][1]
+		args = tree[2]
+
+		if not func_name in __functions:
+			raise SyntaxError('unknown function "{}"'.format(func_name))
+
+		if len(args) != __functions[func_name]:
+			raise SyntaxError('{} requires exactly {} arguments, {} provided'.format(func_name, __functions[func_name], len(args)))
+
+		args_processed = [evaluate_tree(arg) for arg in args]
+
+		func = getattr(math, func_name)
+		return func(*args_processed)
 
 	print("ERROR: reached end of evaluate_tree for tree", tree)
 	sys.exit(1)
