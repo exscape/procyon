@@ -20,7 +20,11 @@ import math
 # * .help command
 # * .vars command shows the value of all variables (except unchanged built-ins)
 
+# TODO: add < > <= >= operators, and ensure that things like 2 < 3 < 4 or 5 > 4 >= 3 works properly
 # TODO: support custom functions?
+# TODO: remember to add the above to the .help listing
+
+__prompt = '> '
 
 # Stuff used by the lexer
 
@@ -65,6 +69,7 @@ def t_HASH(t):
 t_ignore = "\t\r\n "
 
 def t_error(t):
+	print (" " * (t.lexpos + len(__prompt)) + "^")
 	raise SyntaxError('Unexpected {} at input position {}'.format(t.value[0], t.lexpos))
 
 # Stuff used by the parser
@@ -82,6 +87,7 @@ def p_error(p):
 	if p is None:
 		raise SyntaxError('Unexpected end of input; unbalanced parenthesis or missing argument(s)?')
 	else:
+		print (" " * (p.lexpos + len(__prompt)) + "^")
 		raise SyntaxError('Unexpected {} at input position {}'.format(p.type, p.lexpos))
 
 def p_exp_binop(p):
@@ -262,7 +268,7 @@ def evaluate_tree(tree):
 if __name__ == '__main__':
 	while True:
 		try:
-			input_str = input('>>> ')
+			input_str = input(__prompt)
 			try:
 				result = evaluate(input_str)
 				if result is not None:
