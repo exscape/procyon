@@ -8,14 +8,16 @@ import math
 # Thomas Backman (serenity@exscape.org), 2015-01-14
 #
 # Features:
+# * Readline support for history and input editing
 # * Uses integer math where possible (for exact results)
+# * Integer sizes limited by amount of RAM only (floats are *not* arbitrary precision)
 # * Proper order of operations
 # * Supports built-in functions (sqrt, sin, cos, tan, exp, log/log10/log2)
 # * Built-in constants: e, pi
 # * Supports variables
 # * Value of last evaluation is accessible as _
+# * # begins a comment (until end-of-line)
 
-# TODO: comments, single and multi-line...?
 # TODO: support custom functions?
 
 # Stuff used by the lexer
@@ -26,7 +28,8 @@ tokens = ('INT', 'FLOAT',
 		  'EXPONENT',
 		  'LPAREN', 'RPAREN',
 		  'ASSIGN', 'EQEQ',
-		  'IDENT', 'COMMA')
+		  'IDENT',
+		  'COMMA', 'HASH')
 
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
@@ -49,6 +52,11 @@ t_RPAREN = r'\)'
 t_EQEQ = r'=='
 t_ASSIGN = r'='
 t_COMMA = r','
+
+def t_HASH(t):
+	r'\#.*'
+	# Comment: ignore the rest of the line
+	pass
 
 t_ignore = "\t\r\n "
 
@@ -152,7 +160,7 @@ def evaluate_tree(tree):
 		left = evaluate_tree(left_child)
 		right = evaluate_tree(right_child)
 
-		if   op == '+':
+		if op == '+':
 			return left + right
 		elif op == '-':
 			return left - right
@@ -165,9 +173,7 @@ def evaluate_tree(tree):
 		elif op == '==':
 			return left == right
 
-	elif kind == "int":
-		return tree[1]
-	elif kind == "float":
+	elif kind in ("int", "float"):
 		return tree[1]
 	elif kind == "uminus":
 		return -evaluate_tree(tree[1])
@@ -182,9 +188,9 @@ def evaluate_tree(tree):
 
 		if name in __functions:
 			raise KeyError('cannot assign to built-in function "{}"'.format(name))
+
 		val = tree[2]
 		__state[name] = evaluate_tree(val)
-
 		return __state[name]
 	elif kind == "func":
 		func_name = tree[1][1]
@@ -196,12 +202,12 @@ def evaluate_tree(tree):
 		if len(args) != __functions[func_name]:
 			raise SyntaxError('{} requires exactly {} arguments, {} provided'.format(func_name, __functions[func_name], len(args)))
 
-		args_processed = [evaluate_tree(arg) for arg in args]
+		args = [evaluate_tree(arg) for arg in args]
 
 		func = getattr(math, func_name)
-		return func(*args_processed)
+		return func(*args)
 
-	print("ERROR: reached end of evaluate_tree for tree", tree)
+	print("BUG: reached end of evaluate_tree for tree:", tree)
 	sys.exit(1)
 
 if __name__ == '__main__':
