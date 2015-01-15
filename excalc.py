@@ -25,7 +25,6 @@ __DATE = '2015-01-15'
 # TODO: add < > <= >= operators, and ensure that things like 2 < 3 < 4 or 5 > 4 >= 3 works properly
 # TODO: !=
 # TODO: support custom functions?
-# TODO: support ; as a separator (acts as newline)
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: remember to add the above to the .help listing
 
@@ -40,7 +39,7 @@ tokens = ('INT', 'FLOAT',
 		  'LPAREN', 'RPAREN',
 		  'ASSIGN', 'EQEQ',
 		  'IDENT',
-		  'COMMA', 'HASH',
+		  'COMMA', 'SEMICOLON', 'HASH',
 		  'COMMAND')
 
 def t_FLOAT(t):
@@ -65,6 +64,8 @@ t_EQEQ = r'=='
 t_ASSIGN = r'='
 t_COMMA = r','
 t_COMMAND = r'^\.[a-zA-Z]+\s*$'
+t_SEMICOLON = r';'
+# NOTE: don't add token rules for IF, ELSE etc.; see ply docs section 4.3
 
 def t_HASH(t):
 	r'\#.*'
@@ -80,6 +81,7 @@ def t_error(t):
 # Stuff used by the parser
 
 precedence = (
+	  ("nonassoc", "SEMICOLON"),
 	  ("right", "ASSIGN"),
 	  ("left", "EQEQ"),
 	  ("left", "PLUS", "MINUS"),
@@ -94,6 +96,18 @@ def p_error(p):
 	else:
 		print (" " * (p.lexpos + len(__prompt)) + "^")
 		raise SyntaxError('Unexpected {} at input position {}'.format(p.type, p.lexpos))
+
+def p_exps_one(p):
+	'exps : exp'
+	p[0] = [p[1]]
+
+def p_exps_many(p):
+	'exps : exp SEMICOLON exps'
+	p[0] = [p[1]] + p[3]
+
+def p_exps_empty(p):
+	'exps : '
+	p[0] = []
 
 def p_exp_binop(p):
 	'''exp : exp PLUS exp
@@ -176,15 +190,23 @@ def evaluate(expr):
 		return None
 
 	lexer = lex.lex(debug=False)
-	parser = yacc.yacc(debug=False)
+	parser = yacc.yacc(debug=False, start="exps")
 	parse_tree = parser.parse(expr, lexer=lexer)
 
-	result = evaluate_tree(parse_tree)
-	__state['_'] = result
+	result = evaluate_all(parse_tree)
+	if result is not None and len(result) > 0:
+		__state['_'] = result[-1]
+
 	return result
+
+def evaluate_all(trees):
+	""" Evaluates a full set of expressions e.g. 1+2; 3+4: 5+6 and returns a list of results """
+
+	return [evaluate_tree(tree) for tree in trees if len(tree) > 0]
 
 def evaluate_tree(tree):
 	""" Recursively evalutates a parse tree and returns the result. """
+
 	kind = tree[0]
 
 	if kind == "binop":
@@ -285,10 +307,9 @@ if __name__ == '__main__':
 		try:
 			input_str = input(__prompt)
 			try:
-				result = evaluate(input_str)
-				if result is not None:
-					# Commands return None
-					print (result)
+				results = evaluate(input_str)
+				if results is not None and any(results):
+					print ("\n".join([str(r) for r in results if r is not None]))
 			except KeyError as e:
 				print ("Error: {}".format(str(e)[1:-1]))
 			except OverflowError:
