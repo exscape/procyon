@@ -311,7 +311,7 @@ if __name__ == '__main__':
 			input_str = input(__prompt)
 			try:
 				results = evaluate(input_str)
-				if results is not None and any(results):
+				if results is not None and len([r for r in results if r is not None]) > 0:
 					print ("\n".join([str(r) for r in results if r is not None]))
 			except KeyError as e:
 				print ("Error: {}".format(str(e)[1:-1]))
