@@ -221,11 +221,7 @@ def evaluate(expr):
 	parser = yacc.yacc(debug=False, start="exps")
 	parse_tree = parser.parse(expr, lexer=lexer)
 
-	result = evaluate_all(parse_tree)
-	if result is not None and len(result) > 0:
-		__state['_'] = result[-1]
-
-	return result
+	return evaluate_all(parse_tree)
 
 def evaluate_all(trees):
 	""" Evaluates a full set of expressions e.g. 1+2; 3+4: 5+6 and returns a list of results """
@@ -234,9 +230,9 @@ def evaluate_all(trees):
 	for tree in trees:
 		if len(tree) == 0: continue
 		result = evaluate_tree(tree)
+		results.append(result)
 		if result is not None:
 			__state['_'] = result
-		results.append(result)
 
 	return results
 
@@ -317,8 +313,9 @@ def evaluate_tree(tree):
 				print("{}:\t{}".format(var, __state[var]))
 		elif cmd_name == 'help':
 			print("# exCalc v" + __VERSION + ", " + __DATE)
-			print("# Supported operators: + - * / ^ ( ) = ==")
-			print("# = assigns, == tests equality, e.g.:")
+			print("# Supported operators: + - * / ^ ( ) = == !=")
+			print("# Comments begin with a hash sign, as these lines do.")
+			print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
 			print("# a = 5")
 			print("# a == 5 # returns True")
 			print("#")
