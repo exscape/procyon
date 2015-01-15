@@ -141,9 +141,16 @@ def p_exp_binop(p):
 
 # Support multiple comparisons:
 # a > b
-# ("comps", [("comp", "a", ">", "b")])
+# ('comps', [('comp', ('ident', 'a'), '>', ('ident', 'b'))])
 # a > b > c
-# ("comps", ["comp", "a", ">", "b"), ("comp", "b", ">", "c")]) -> True if all() in the list are true
+# ('comps', [('comp', ('ident', 'a'), '>', ('ident', 'b')), ('comp', ('ident', 'b'), '>', ('ident', 'c'))])
+# True if all comparisons in the list are true
+
+# TODO:
+# TODO: (a > b > c) == d
+# TODO: Needs evaluate a > b > c, then compare that result (0 or 1) with d
+# ('comp', ('comps', [a>b,b>c]), '==', ('ident', 'd'))
+#... where the list is the entire thing shown above for a > b > c
 
 def p_comps_one(p):
 	'comps : comp'
@@ -180,7 +187,7 @@ def p_exp_paren(p):
 	p[0] = p[2]
 
 def p_comp_paren(p):
-	'comps : LPAREN comps RPAREN'
+	'comp : LPAREN comp RPAREN'
 	p[0] = p[2]
 
 def p_exp_num(p):
