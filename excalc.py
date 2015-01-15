@@ -31,7 +31,7 @@ __prompt = '> '
 
 # Stuff used by the lexer
 
-tokens = ('INT', 'FLOAT',
+tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',
 		  'PLUS', 'MINUS',
 		  'TIMES', 'DIVIDE',
 		  'EXPONENT',
@@ -44,6 +44,21 @@ tokens = ('INT', 'FLOAT',
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
 	t.value = float(t.value)
+	return t
+
+def t_BIN(t):
+	r'0b[01]+'
+	t.value = int(t.value, 2)
+	return t
+
+def t_OCT(t):
+	r'0o[0-7]+'
+	t.value = int(t.value, 8)
+	return t
+
+def t_HEX(t):
+	r'0x[0-9A-Fa-f]+'
+	t.value = int(t.value, 16)
 	return t
 
 def t_INT(t):
@@ -123,6 +138,18 @@ def p_exp_binop(p):
 def p_exp_paren(p):
 	'exp : LPAREN exp RPAREN'
 	p[0] = p[2]
+
+def p_exp_hex(p):
+	'exp : HEX'
+	p[0] = ("int", p[1])
+
+def p_exp_oct(p):
+	'exp : OCT'
+	p[0] = ("int", p[1])
+
+def p_exp_bin(p):
+	'exp : BIN'
+	p[0] = ("int", p[1])
 
 def p_exp_int(p):
 	'exp : INT'
