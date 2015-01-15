@@ -12,15 +12,16 @@ __DATE = '2015-01-15'
 # Features:
 # * Readline support for history and input editing
 # * Uses integer math where possible (for exact results)
+# * Support for input of hexadecimal/octal/binary numbers (not output, though)
 # * Integer sizes limited by amount of RAM only (floats are *not* arbitrary precision)
 # * Proper order of operations
-# * Supports built-in functions (sqrt, sin, cos, tan, and so on, see .help for a complete list)
 # * Built-in constants: e, pi
 # * Supports variables
-# * Value of last evaluation is accessible as _
-# * # begins a comment (until end-of-line)
 # * .help command
 # * .vars command shows the value of all variables (except unchanged built-ins)
+# * Supports built-in functions (sqrt, sin, cos, tan and so on, see .help for a complete list)
+# * Value of last evaluation is accessible as _
+# * # begins a comment (until end-of-line)
 
 # TODO: add < > <= >= operators, and ensure that things like 2 < 3 < 4 or 5 > 4 >= 3 works properly
 # TODO: support custom functions?
@@ -32,14 +33,12 @@ __prompt = '> '
 # Stuff used by the lexer
 
 tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',
-		  'PLUS', 'MINUS',
-		  'TIMES', 'DIVIDE',
+		  'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
 		  'EXPONENT',
 		  'LPAREN', 'RPAREN',
 		  'ASSIGN', 'EQEQ', 'NOTEQ',
-		  'IDENT',
-		  'COMMA', 'SEMICOLON', 'HASH',
-		  'COMMAND')
+		  'COMMA', 'SEMICOLON',
+		  'IDENT', 'COMMAND')
 
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
@@ -82,11 +81,7 @@ t_COMMAND = r'^\.[a-zA-Z]+\s*$'
 t_SEMICOLON = r';'
 # NOTE: don't add token rules for IF, ELSE etc.; see ply docs section 4.3
 
-def t_HASH(t):
-	r'\#.*'
-	# Comment: ignore the rest of the line
-	pass
-
+t_ignore_HASH = r'\#.*'
 t_ignore = "\t\r\n "
 
 def t_error(t):
@@ -139,20 +134,11 @@ def p_exp_paren(p):
 	'exp : LPAREN exp RPAREN'
 	p[0] = p[2]
 
-def p_exp_hex(p):
-	'exp : HEX'
-	p[0] = ("int", p[1])
-
-def p_exp_oct(p):
-	'exp : OCT'
-	p[0] = ("int", p[1])
-
-def p_exp_bin(p):
-	'exp : BIN'
-	p[0] = ("int", p[1])
-
-def p_exp_int(p):
-	'exp : INT'
+def p_exp_num(p):
+	'''exp : INT
+	       | HEX
+	       | OCT
+	       | BIN'''
 	p[0] = ("int", p[1])
 
 def p_exp_float(p):
