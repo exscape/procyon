@@ -23,7 +23,7 @@ __DATE = '2015-01-15'
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
 
-# TODO: add < > <= >= operators, and ensure that things like 2 < 3 < 4 or 5 > 4 >= 3 works properly
+# TODO: comparison chaining, e.g. < 3 < 4,  5 > 4 >= 3 and a == b == c
 # TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: remember to add the above to the .help listing
@@ -37,6 +37,7 @@ tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',
 		  'EXPONENT',
 		  'LPAREN', 'RPAREN',
 		  'ASSIGN', 'EQEQ', 'NOTEQ',
+		  'LT', 'GT', 'LE', 'GE',
 		  'COMMA', 'SEMICOLON',
 		  'IDENT', 'COMMAND')
 
@@ -75,6 +76,10 @@ t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_NOTEQ = r'!='
 t_EQEQ = r'=='
+t_GE = r'>='
+t_LE = r'<='
+t_LT = r'<'
+t_GT = r'>'
 t_ASSIGN = r'='
 t_COMMA = r','
 t_COMMAND = r'^\.[a-zA-Z]+\s*$'
@@ -94,6 +99,7 @@ precedence = (
 	  ("nonassoc", "SEMICOLON"),
 	  ("right", "ASSIGN"),
 	  ("left", "EQEQ", "NOTEQ"),
+	  ("left", "LT", "GT", "LE", "GE"),
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
 	  ("right", "UMINUS"),
@@ -126,7 +132,11 @@ def p_exp_binop(p):
 	       | exp DIVIDE exp
 	       | exp EXPONENT exp
 	       | exp EQEQ exp
-	       | exp NOTEQ exp'''
+	       | exp NOTEQ exp
+	       | exp LT exp
+	       | exp GT exp
+	       | exp LE exp
+	       | exp GE exp'''
 
 	p[0] = ("binop", p[1], p[2], p[3])
 
@@ -247,6 +257,14 @@ def evaluate_tree(tree):
 			return left == right
 		elif op == '!=':
 			return left != right
+		elif op == '>':
+			return left > right
+		elif op == '<':
+			return left < right
+		elif op == '<=':
+			return left <= right
+		elif op == '>=':
+			return left >= right
 
 	elif kind in ("int", "float"):
 		return tree[1]
@@ -299,7 +317,7 @@ def evaluate_tree(tree):
 				print("{}:\t{}".format(var, __state[var]))
 		elif cmd_name == 'help':
 			print("# exCalc v" + __VERSION + ", " + __DATE)
-			print("# Supported operators: + - * / ^ ( ) = == !=")
+			print("# Supported operators: + - * / ^ ( ) = == != < > >= <=")
 			print("# Comments begin with a hash sign, as these lines do.")
 			print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
 			print("# a = 5")
