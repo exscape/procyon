@@ -23,7 +23,8 @@ __DATE = '2015-01-15'
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
 
-# TODO: comparison chaining, e.g. < 3 < 4,  5 > 4 >= 3 and a == b == c
+# TODO: fix bug: (10 > 8) > 5 acts as 10 > 8 > 5 instead of (1) > 5
+# TODO: &&, || or perhaps "and", "or"
 # TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: remember to add the above to the .help listing
@@ -98,8 +99,7 @@ def t_error(t):
 precedence = (
 	  ("nonassoc", "SEMICOLON"),
 	  ("right", "ASSIGN"),
-	  ("left", "EQEQ", "NOTEQ"),
-	  ("left", "LT", "GT", "LE", "GE"),
+	  ("left", "EQEQ", "NOTEQ", "LT", "GT", "LE", "GE"),
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
 	  ("right", "UMINUS"),
@@ -117,8 +117,13 @@ def p_exps_one(p):
 	'exps : exp'
 	p[0] = [p[1]]
 
+def p_exps_comps(p):
+	'exps : comps'
+	p[0] = [p[1]]
+
 def p_exps_many(p):
-	'exps : exp SEMICOLON exps'
+	''' exps : exp SEMICOLON exps
+		     | comps SEMICOLON exps'''
 	p[0] = [p[1]] + p[3]
 
 def p_exps_empty(p):
@@ -130,18 +135,52 @@ def p_exp_binop(p):
 	       | exp MINUS exp
 	       | exp TIMES exp
 	       | exp DIVIDE exp
-	       | exp EXPONENT exp
-	       | exp EQEQ exp
-	       | exp NOTEQ exp
-	       | exp LT exp
-	       | exp GT exp
-	       | exp LE exp
-	       | exp GE exp'''
+	       | exp EXPONENT exp'''
 
 	p[0] = ("binop", p[1], p[2], p[3])
 
+# Support multiple comparisons:
+# a > b
+# ("comps", [("comp", "a", ">", "b")])
+# a > b > c
+# ("comps", ["comp", "a", ">", "b"), ("comp", "b", ">", "c")]) -> True if all() in the list are true
+
+def p_comps_one(p):
+	'comps : comp'
+	p[0] = ("comps", [p[1]])
+
+def p_comps_many(p):
+	'comps : comps compop exp'
+
+	# Eww... So here's an example of how this line works.
+	# While parsing a > b > c, the various parts refer to these values:       v p[2]
+	# p =  [None, ('comps', [('comp', ('ident', 'a'), '>', ('ident', 'b'))]), '>',   ('ident', 'c')]
+	#       ^p[0]  ^p[1][0] ^p[1][1] (the entire list)               ^p[1][1][-1][3] ^ p[3]
+	p[0] = ("comps", p[1][1] + [("comp", p[1][1][-1][3], p[2], p[3])])
+
+def p_comp_one(p):
+	'''comp : exp compop exp'''
+	args = []
+	for i in range(1, len(p)):
+		args.append(p[i])
+#print("comp_one: args = ", args)
+	p[0] = ("comp", p[1], p[2], p[3])
+
+def p_compop(p):
+	'''compop : EQEQ
+	          | NOTEQ
+	          | LT
+	          | GT
+	          | LE
+	          | GE'''
+	p[0] = p[1]
+
 def p_exp_paren(p):
 	'exp : LPAREN exp RPAREN'
+	p[0] = p[2]
+
+def p_comp_paren(p):
+	'comps : LPAREN comps RPAREN'
 	p[0] = p[2]
 
 def p_exp_num(p):
@@ -213,8 +252,8 @@ def evaluate(expr):
 	if len(expr.rstrip()) == 0:
 		return None
 
-	lexer = lex.lex(debug=False)
-	parser = yacc.yacc(debug=False, start="exps")
+	lexer = lex.lex(debug=False,optimize=True)
+	parser = yacc.yacc(debug=False, start="exps",optimize=True)
 	parse_tree = parser.parse(expr, lexer=lexer)
 
 	return evaluate_all(parse_tree)
@@ -239,7 +278,6 @@ def evaluate_tree(tree):
 
 	if kind == "binop":
 		(left_child, op, right_child) = tree[1:]
-
 		left = evaluate_tree(left_child)
 		right = evaluate_tree(right_child)
 
@@ -253,7 +291,17 @@ def evaluate_tree(tree):
 			return left / right
 		elif op == '^':
 			return left ** right
-		elif op == '==':
+
+	elif kind == "comps":
+		args = tree[1]
+		return all([evaluate_tree(tree) for tree in args])
+
+	elif kind == "comp":
+		(left_child, op, right_child) = tree[1:]
+		left = evaluate_tree(left_child)
+		right = evaluate_tree(right_child)
+
+		if op == '==':
 			return left == right
 		elif op == '!=':
 			return left != right
@@ -339,7 +387,7 @@ def evaluate_tree(tree):
 
 		return None
 
-	print("BUG: reached end of evaluate_tree for tree:", tree)
+	print("BUG: reached end of evaluate_tree for kind={}, tree: {}".format(kind,tree))
 	sys.exit(1)
 
 if __name__ == '__main__':
