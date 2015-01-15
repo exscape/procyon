@@ -5,7 +5,9 @@ from ply import lex, yacc
 import math
 
 # Simple calculator; written for Python 3 (3.4.2).
-# Thomas Backman (serenity@exscape.org), 2015-01-14
+# Thomas Backman (serenity@exscape.org), 2015-01-14, 2015-01-15
+__VERSION = '0.1'
+__DATE = '2015-01-15'
 #
 # Features:
 # * Readline support for history and input editing
@@ -21,7 +23,10 @@ import math
 # * .vars command shows the value of all variables (except unchanged built-ins)
 
 # TODO: add < > <= >= operators, and ensure that things like 2 < 3 < 4 or 5 > 4 >= 3 works properly
+# TODO: !=
 # TODO: support custom functions?
+# TODO: support ; as a separator (acts as newline)
+# TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: remember to add the above to the .help listing
 
 __prompt = '> '
@@ -153,7 +158,12 @@ def p_command(p):
 # End of parser definitions
 
 # Built-in functions and number of arguments
-__functions = {'sin': 1, 'cos': 1, 'tan': 1, 'exp': 1, 'sqrt': 1, 'log': 1, 'log10': 1, 'log2': 1, 'atan2': 2, 'abs': 1}
+__functions = {'sin': 1, 'cos': 1, 'tan': 1,
+	           'exp': 1, 'log': 1, 'log10': 1, 'log2': 1,
+			   'asin': 1, 'acos': 1, 'atan': 1, 'atan2': 2,
+			   'sinh': 1, 'cosh': 1, 'tanh': 1,
+			   'asinh': 1, 'acosh': 1, 'atanh': 1,
+			   'abs': 1, 'sqrt': 1, 'ceil': 1, 'floor': 1, 'trunc': 1, 'round': 2}
 
 # Built-in constants; there are overwritable by design
 __initial_state = {'e': math.e, 'pi': math.pi}
@@ -246,6 +256,7 @@ def evaluate_tree(tree):
 			for var in sorted(vars):
 				print("{}:\t{}".format(var, __state[var]))
 		elif cmd_name == 'help':
+			print("# exCalc v" + __VERSION + ", " + __DATE)
 			print("# Supported operators: + - * / ^ ( ) = ==")
 			print("# = assigns, == tests equality, e.g.:")
 			print("# a = 5")
@@ -255,8 +266,8 @@ def evaluate_tree(tree):
 			print("# .help - this text")
 			print("# .vars - show all variables, except non-modified builtins")
 			print("#")
-			print("# Supported functions:")
-			print("# " + ", ".join(sorted(__functions)))
+			print("# Supported functions (number of arguments, if not 1):")
+			print("# " + ", ".join(sorted(["{}{}".format(f, "({})".format(__functions[f]) if __functions[f] > 1 else "") for f in __functions])))
 			print("#")
 			print("# Built-in constants (names are re-assignable):")
 			print("# " + ", ".join(sorted(__initial_state)))
