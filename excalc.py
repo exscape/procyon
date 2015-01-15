@@ -23,7 +23,6 @@ __DATE = '2015-01-15'
 # * .vars command shows the value of all variables (except unchanged built-ins)
 
 # TODO: add < > <= >= operators, and ensure that things like 2 < 3 < 4 or 5 > 4 >= 3 works properly
-# TODO: !=
 # TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: remember to add the above to the .help listing
@@ -37,7 +36,7 @@ tokens = ('INT', 'FLOAT',
 		  'TIMES', 'DIVIDE',
 		  'EXPONENT',
 		  'LPAREN', 'RPAREN',
-		  'ASSIGN', 'EQEQ',
+		  'ASSIGN', 'EQEQ', 'NOTEQ',
 		  'IDENT',
 		  'COMMA', 'SEMICOLON', 'HASH',
 		  'COMMAND')
@@ -60,6 +59,7 @@ t_DIVIDE = r'/'
 t_EXPONENT = r'\^'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
+t_NOTEQ = r'!='
 t_EQEQ = r'=='
 t_ASSIGN = r'='
 t_COMMA = r','
@@ -83,7 +83,7 @@ def t_error(t):
 precedence = (
 	  ("nonassoc", "SEMICOLON"),
 	  ("right", "ASSIGN"),
-	  ("left", "EQEQ"),
+	  ("left", "EQEQ", "NOTEQ"),
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
 	  ("right", "UMINUS"),
@@ -115,7 +115,8 @@ def p_exp_binop(p):
 	       | exp TIMES exp
 	       | exp DIVIDE exp
 	       | exp EXPONENT exp
-	       | exp EQEQ exp'''
+	       | exp EQEQ exp
+	       | exp NOTEQ exp'''
 
 	p[0] = ("binop", p[1], p[2], p[3])
 
@@ -227,6 +228,8 @@ def evaluate_tree(tree):
 			return left ** right
 		elif op == '==':
 			return left == right
+		elif op == '!=':
+			return left != right
 
 	elif kind in ("int", "float"):
 		return tree[1]
