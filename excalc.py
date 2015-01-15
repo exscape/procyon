@@ -230,7 +230,15 @@ def evaluate(expr):
 def evaluate_all(trees):
 	""" Evaluates a full set of expressions e.g. 1+2; 3+4: 5+6 and returns a list of results """
 
-	return [evaluate_tree(tree) for tree in trees if len(tree) > 0]
+	results = []
+	for tree in trees:
+		if len(tree) == 0: continue
+		result = evaluate_tree(tree)
+		if result is not None:
+			__state['_'] = result
+		results.append(result)
+
+	return results
 
 def evaluate_tree(tree):
 	""" Recursively evalutates a parse tree and returns the result. """
@@ -324,6 +332,7 @@ def evaluate_tree(tree):
 			print("# Built-in constants (names are re-assignable):")
 			print("# " + ", ".join(sorted(__initial_state)))
 			print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
+			print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
 		else:
 			raise SyntaxError("Unknown command {}".format(cmd_name))
 
