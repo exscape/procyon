@@ -5,10 +5,11 @@ from ply import lex, yacc
 import math
 
 # Simple calculator; written for Python 3 (3.4.2).
-# Thomas Backman (serenity@exscape.org), 2015-01-14, 2015-01-15
-__VERSION = '0.1'
-__DATE = '2015-01-15'
-#
+# Thomas Backman (serenity@exscape.org), 2015-01-14 - 2015-01-16
+__VERSION = '0.1a'
+__DATE = '2015-01-16'
+__debugparse = 0
+
 # Features:
 # * Readline support for history and input editing
 # * Uses integer math where possible (for exact results)
@@ -23,11 +24,13 @@ __DATE = '2015-01-15'
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
 
-# TODO: fix bug: (10 > 8) > 5 acts as 10 > 8 > 5 instead of (1) > 5
-# TODO: &&, || or perhaps "and", "or"
+# TODO: comment the parsing stuff before everything is forgotten :-)
+# TODO: &&, || or perhaps "and", "or"; also not
 # TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
+# TODO: split source into multiple files (lexer/parser/interpreter)
 # TODO: remember to add the above to the .help listing
+# TODO: unit testing, including testing exceptions for syntax errors etc
 
 __prompt = '> '
 
@@ -139,23 +142,37 @@ def p_exp_binop(p):
 
 	p[0] = ("binop", p[1], p[2], p[3])
 
+# These two rules following are very simple in terms of the function body,
+# but the grammar rules were difficult to get right, in terms of comp/comps, not getting
+# a tree with unnecessary nested comps (should be harmless, but ugly) and so on.
+# All of the following need to work:
+# 5 > 4: True
+# 5 > 4 > 3: True
+# (5 > 4) > 3: False, since (5 > 4) == 1, so 1 > 3 gives False
+# (5 > 4 > 3) == 1: True
+# ... and so on.
+# Also see the comments for p_comps_many, for the rules for parsing a>b>c style expressions.
+def p_comps_paren(p):
+	'comps : LPAREN comps RPAREN'''
+	p[0] = p[2]
+
+# E.g. (a>b>c) == d, which generates the parse tree:
+# ('comp', ('comps', [('comp', ('ident', 'a'), '>', ('ident', 'b')), ('comp', ('ident', 'b'), '>', ('ident', 'c'))]), '==', ('ident', 'd'))
+# Or: A comparison of (a set of comparisons, a>b && b>c) == (d)
+def p_comps_paren_comparison(p):
+	'comps : LPAREN comps RPAREN compop exp'
+	p[0] = ("comp", p[2], p[4], p[5])
+
+def p_comps_one(p):
+	'comps : comp'
+	p[0] = ("comps", [p[1]])
+
 # Support multiple comparisons:
 # a > b
 # ('comps', [('comp', ('ident', 'a'), '>', ('ident', 'b'))])
 # a > b > c
 # ('comps', [('comp', ('ident', 'a'), '>', ('ident', 'b')), ('comp', ('ident', 'b'), '>', ('ident', 'c'))])
 # True if all comparisons in the list are true
-
-# TODO:
-# TODO: (a > b > c) == d
-# TODO: Needs evaluate a > b > c, then compare that result (0 or 1) with d
-# ('comp', ('comps', [a>b,b>c]), '==', ('ident', 'd'))
-#... where the list is the entire thing shown above for a > b > c
-
-def p_comps_one(p):
-	'comps : comp'
-	p[0] = ("comps", [p[1]])
-
 def p_comps_many(p):
 	'comps : comps compop exp'
 
@@ -184,10 +201,6 @@ def p_compop(p):
 
 def p_exp_paren(p):
 	'exp : LPAREN exp RPAREN'
-	p[0] = p[2]
-
-def p_comp_paren(p):
-	'comp : LPAREN comp RPAREN'
 	p[0] = p[2]
 
 def p_exp_num(p):
@@ -259,9 +272,9 @@ def evaluate(expr):
 	if len(expr.rstrip()) == 0:
 		return None
 
-	lexer = lex.lex(debug=False,optimize=True)
-	parser = yacc.yacc(debug=False, start="exps",optimize=True)
-	parse_tree = parser.parse(expr, lexer=lexer)
+	lexer = lex.lex(debug=False,optimize=False)
+	parser = yacc.yacc(debug=False, start="exps",optimize=False)
+	parse_tree = parser.parse(expr, lexer=lexer, debug=__debugparse)
 
 	return evaluate_all(parse_tree)
 
