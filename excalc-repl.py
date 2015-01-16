@@ -13,13 +13,14 @@
 # * Supports variables
 # * Chained comparisons: a > b > c works as in mathematics; things like a > b >= c == d also works
 #   These are treated as (a > b) && (b > c), and (a > b) && (b > c) && (c == d), respectively.
+# * On the other hand, c == (a > b) means to test a > b first; c is then tested against that 0 or 1
 # * .help command
 # * .vars command shows the value of all variables (except unchanged built-ins)
 # * Supports built-in functions (sqrt, sin, cos, tan and so on, see .help for a complete list)
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
 
-# TODO: comment the parsing stuff before everything is forgotten :-)
+# TODO: refactor to better Python style
 # TODO: &&, || or perhaps "and", "or"; also not
 # TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined

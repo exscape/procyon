@@ -30,6 +30,9 @@ def evaluate(expr):
 	yacc_parser = yacc.yacc(module=parser, debug=False, start="toplevel")
 	parse_tree = yacc_parser.parse(expr, lexer=lex_lexer, debug=__debugparse__)
 
+	if __debugparse__:
+		print('ENTIRE TREE:', parse_tree)
+
 	return __evaluate_all(parse_tree)
 
 def __evaluate_all(trees):
@@ -66,36 +69,49 @@ def __evaluate_tree(tree):
 		elif op == '^':
 			return left ** right
 
-	elif kind == "comps":
-		args = tree[1]
-		return all([__evaluate_tree(tree) for tree in args])
-
-	elif kind == "comp":
-		(left_child, op, right_child) = tree[1:]
-		left = __evaluate_tree(left_child)
-		right = __evaluate_tree(right_child)
-
-		if op == '==':
-			return left == right
-		elif op == '!=':
-			return left != right
-		elif op == '>':
-			return left > right
-		elif op == '<':
-			return left < right
-		elif op == '<=':
-			return left <= right
-		elif op == '>=':
-			return left >= right
-
 	elif kind in ("int", "float"):
 		return tree[1]
+
+	elif kind == "comp":
+		# chunk(['a', '>', 'b', '>=', 'c', '==', 'd']) generates the list
+		# [['a', '>', 'b'], ['b', '>=', 'c'], ['c', '==', 'd']]
+		# except it uses Python generators
+		def chunk(l):
+			for i in range(0, len(l) - 1, 2):
+				yield l[i : i+3]
+
+		def comp_one(left, op, right):
+			left  = __evaluate_tree(left)
+			right = __evaluate_tree(right)
+			if op == '==':
+				return int(left == right)
+			elif op == '!=':
+				return int(left != right)
+			elif op == '>':
+				return int(left > right)
+			elif op == '<':
+				return int(left < right)
+			elif op == '<=':
+				return int(left <= right)
+			elif op == '>=':
+				return int(left >= right)
+
+		comparisons = tree[1]
+
+		# ("a", ">", "b") -> [comp_one(a, >, b)]
+		# ("a", ">", "b", ">=", "c") -> [comp_one(a, >, b), comp_one(b, >=, c)]
+		# (Note that the above is simplified, as "a" would in reality be ("ident", "a"), etc.)
+		return int(all(comp_one(*c) for c in chunk(comparisons)))
+
 	elif kind == "uminus":
 		return -__evaluate_tree(tree[1])
 	elif kind == "not":
 		return not __evaluate_tree(tree[1])
 	elif kind == "ident":
 		name = tree[1]
+		if name in __functions:
+			raise SyntaxError("can't assign to built-in function \"{}\"".format(name))
+
 		try:
 			return __state[name]
 		except KeyError:
