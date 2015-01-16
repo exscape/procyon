@@ -20,6 +20,16 @@ def p_error(p):
 		print (" " * (p.lexpos + len(__prompt__)) + "^")
 		raise SyntaxError('Unexpected {} at input position {}'.format(p.type, p.lexpos))
 
+# A list of all things allowed at the top level; for now expressions and commands,
+# later on function definitions and such as well.
+def p_toplevel_exps(p):
+	'toplevel : exps'
+	p[0] = p[1]
+
+def p_toplevel_command(p):
+	'toplevel : command'
+	p[0] = [p[1]]
+
 def p_exps_one(p):
 	'exps : exp'
 	p[0] = [p[1]]
@@ -146,11 +156,6 @@ def p_ident(p):
 def p_assign(p):
 	'exp : ident ASSIGN exp'
 	p[0] = ("assign", p[1], p[3])
-
-# Ugly, but it works (shouldn't really be an expression)
-def p_exp_command(p):
-	'exp : command'
-	p[0] = p[1]
 
 def p_command(p):
 	'command : COMMAND'

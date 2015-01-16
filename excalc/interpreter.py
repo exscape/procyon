@@ -27,7 +27,7 @@ def evaluate(expr):
 		return None
 
 	lex_lexer = lex.lex(module=lexer, debug=False, optimize=True)
-	yacc_parser = yacc.yacc(module=parser, debug=False, start="exps")
+	yacc_parser = yacc.yacc(module=parser, debug=False, start="toplevel")
 	parse_tree = yacc_parser.parse(expr, lexer=lex_lexer, debug=__debugparse__)
 
 	return __evaluate_all(parse_tree)
