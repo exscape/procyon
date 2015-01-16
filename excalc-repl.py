@@ -11,6 +11,8 @@
 # * Proper order of operations
 # * Built-in constants: e, pi
 # * Supports variables
+# * Chained comparisons: a > b > c works as in mathematics; things like a > b >= c == d also works
+#   These are treated as (a > b) && (b > c), and (a > b) && (b > c) && (c == d), respectively.
 # * .help command
 # * .vars command shows the value of all variables (except unchanged built-ins)
 # * Supports built-in functions (sqrt, sin, cos, tan and so on, see .help for a complete list)
