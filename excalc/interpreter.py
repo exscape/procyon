@@ -92,6 +92,8 @@ def __evaluate_tree(tree):
 		return tree[1]
 	elif kind == "uminus":
 		return -__evaluate_tree(tree[1])
+	elif kind == "not":
+		return not __evaluate_tree(tree[1])
 	elif kind == "ident":
 		name = tree[1]
 		try:

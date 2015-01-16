@@ -9,7 +9,7 @@ precedence = (
 	  ("left", "EQEQ", "NOTEQ", "LT", "GT", "LE", "GE"),
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
-	  ("right", "UMINUS"),
+	  ("right", "UMINUS", "NOT"),
 	  ("right", "EXPONENT"),
 	  )
 
@@ -20,8 +20,6 @@ def p_error(p):
 		print (" " * (p.lexpos + len(__prompt__)) + "^")
 		raise SyntaxError('Unexpected {} at input position {}'.format(p.type, p.lexpos))
 
-# A list of all things allowed at the top level; for now expressions and commands,
-# later on function definitions and such as well.
 def p_toplevel_exps(p):
 	'toplevel : exps'
 	p[0] = p[1]
@@ -136,6 +134,10 @@ def p_exp_uminus(p):
 	'exp : MINUS exp %prec UMINUS'
 	# Matches -exp and uses precedence UMINUS instead of the usual MINUS
 	p[0] = ("uminus", p[2])
+
+def p_exp_not(p):
+	'exp : NOT exp'
+	p[0] = ("not", p[2])
 
 def p_exp_func(p):
 	'exp : ident LPAREN args RPAREN'
