@@ -2,15 +2,13 @@
 
 from .version import __prompt__
 
-tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',
-		  'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
-		  'EXPONENT',
-		  'LPAREN', 'RPAREN',
-		  'ASSIGN', 'EQEQ', 'NOTEQ',
-		  'LT', 'GT', 'LE', 'GE',
-		  'COMMA', 'SEMICOLON',
+tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',           # Number literals
+		  'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT', # Math operators
+		  'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',       # Comparison operators
+		  'LPAREN', 'RPAREN', 'ASSIGN', 'COMMA', 'SEMICOLON',
 		  'IDENT', 'COMMAND')
 
+# Matches e.g. 1., 1.4, 2.3e2 (230), 4e-3 (0.004)
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
 	t.value = float(t.value)
@@ -36,6 +34,7 @@ def t_INT(t):
 	t.value = int(t.value)
 	return t
 
+# Tokens that don't need any transformations
 t_IDENT = r'[A-Za-z_][A-Za-z0-9_]*'
 t_PLUS = r'\+'
 t_MINUS = r'-'
@@ -56,7 +55,8 @@ t_COMMAND = r'^\.[a-zA-Z]+\s*$'
 t_SEMICOLON = r';'
 # NOTE: don't add token rules for IF, ELSE etc.; see ply docs section 4.3
 
-t_ignore_HASH = r'\#.*'
+# Comments begin with # and last one line; whitespace outside of strings etc. is ignored
+t_ignore_COMMENT = r'\#.*'
 t_ignore = "\t\r\n "
 
 def t_error(t):
