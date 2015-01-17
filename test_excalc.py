@@ -122,6 +122,59 @@ def test_comparisons_2():
 	assert ev("1 == ((10 >= 10) == 1)") == [1]
 	assert ev("0 != (4 <= 5)") == [1]
 
+def test_comparisons_3():
+	assert ev("10 == (a=10) == 10") == [1]
+	assert ev("1 == a = 10 == 10") == [1]
+	assert ev("1 == (6 > 4 >= 4 < 6 == 6)") == [1]
+	assert ev("0 != (5 > 4 == 4)") == [1]
+	assert ev("4 == (!(4^2<3) + 3) == 4") == [1]
+	assert ev("!!2^4 >= 0 > -(2^3) == -8") == [1]
+	assert ev("((34 == 30 + 4) == 1) == 0") == [0]
+
+def test_syntax_error_1():
+	with pytest.raises(SyntaxError):
+		ev("1+3+(4))")
+
+def test_syntax_error_2():
+	with pytest.raises(SyntaxError):
+		ev("1+(3+(4)")
+
+def test_syntax_error_3():
+	with pytest.raises(SyntaxError):
+		ev("sin")
+
+def test_syntax_error_4():
+	with pytest.raises(SyntaxError):
+		ev("cos()")
+
+def test_syntax_error_5():
+	with pytest.raises(SyntaxError):
+		ev("cos(3, 2)")
+
+def test_syntax_error_6():
+	with pytest.raises(SyntaxError):
+		ev("2^3!")
+
+def test_syntax_error_7():
+	with pytest.raises(SyntaxError):
+		ev("10 + 3 + 5%")
+
+def test_syntax_error_8():
+	with pytest.raises(SyntaxError):
+		ev(".hello")
+
+def test_syntax_error_9():
+	with pytest.raises(SyntaxError):
+		ev("sin(1) = 3")
+
+def test_keyerror_1():
+	with pytest.raises(KeyError):
+		ev("5 + abc")
+
+def test_keyerror_2():
+	with pytest.raises(KeyError):
+		ev("sin = 40")
+
 def test_not():
 	assert ev("!1") == [0]
 	assert ev("!0") == [1]
