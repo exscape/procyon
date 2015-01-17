@@ -162,11 +162,10 @@ def p_exp_func(p):
 	'exp : ident LPAREN args RPAREN'
 	p[0] = ("func", p[1], p[3])
 
-# TODO: reduce ambiguity and test that everything still works
 # Function arguments
 def p_args_many(p):
-	'args : args COMMA args'
-	p[0] = p[1] + p[3]
+	'args : exp COMMA args'
+	p[0] = [p[1]] + p[3]
 
 # Function arguments
 def p_args_one(p):
