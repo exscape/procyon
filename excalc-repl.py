@@ -21,11 +21,9 @@
 # * # begins a comment (until end-of-line)
 
 # TODO: refactor to better Python style
-# TODO: &&, || or perhaps "and", "or"; also not
 # TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: remember to add the above to the .help listing
-# TODO: unit testing, including testing exceptions for syntax errors etc
 
 from excalc.interpreter import evaluate
 from excalc.version import __version__, __date__, __prompt__

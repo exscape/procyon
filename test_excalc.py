@@ -167,6 +167,14 @@ def test_syntax_error_9():
 	with pytest.raises(SyntaxError):
 		ev("sin(1) = 3")
 
+def test_syntax_error_10():
+	with pytest.raises(SyntaxError):
+		ev("10 + 1; 3 * (3; 2)")
+
+def test_syntax_error_10():
+	with pytest.raises(SyntaxError):
+		ev("(4 + 1; 1 && 3)")
+
 def test_keyerror_1():
 	with pytest.raises(KeyError):
 		ev("5 + abc")
@@ -236,6 +244,40 @@ def test_and_or_3():
 		ev("0 && (xyz = sin(1)); xyz")
 	with pytest.raises(KeyError):
 		ev("xyz + 1")
+
+# After spending two days getting this right,
+# I **really** want to have a lot of tests for it.
+# Despite having 70+ asserts testing or/and and comparisons,
+# only *ONE* failed previously, despite a major bug:
+# 1 == 2 || 3 == 4 was parsed as 1 == (2 || 3) == 4, which is true!
+# (The issue wasn't with precedence, but with the grammar.)
+def test_comp_and_or_1():
+	assert ev("1 == 2 || 3 == 4") == [0]
+	assert ev("1 == 2 && 3 == 4") == [0]
+	assert ev("3 > 2 > 1 && 5 > 3 == 3") == [1]
+	assert ev("3 > 2 > 1 && 5 < 3 == 3") == [0]
+	assert ev("1 == ((a = 1) > 0)") == [1]
+	assert ev("0 && 0 || 1") == [1]
+	assert ev("0 && 1 || 1") == [1]
+	assert ev("5 && 5 == 6 || 7") == [1]
+
+def test_comp_and_or_2():
+	assert ev("((4 > 3) == 1) != 0") == [1]
+	assert ev("-!(2^3) && 5 || 1") == [1]
+	assert ev("-!(2^3) || 5 && 1") == [1]
+	assert ev("1 || 3 && 4 || 0") == [1]
+	assert ev("0 || 4 > 3 || 0") == [1]
+	assert ev("0 || 5>4>2>3") == [0]
+	assert ev("7 == a = 3 + 4; a") == [1, 7]
+	assert ev("!!2^4 != !1 + !1") == [1]
+
+def test_comp_and_or_3():
+	assert ev("!!!1") == [0]
+	assert ev("5^(3 && 4)") == [5]
+	assert ev("1.1 || 0.0") == [1]
+	assert ev("1.1 && 0.0") == [0]
+	assert ev("1 && 2 ; 2 > 4 || 2 != 1 ; 1 > 0 >= 0 && 2") == [1, 1, 1]
+	assert ev("4 >= 3 || 2^10 > 10^2") == [1]
 
 def test_variables():
 	assert ev("a = 5") == [5]

@@ -182,7 +182,7 @@ def __evaluate_tree(tree):
 				print("{}:\t{}".format(var, __state[var]))
 		elif cmd_name == 'help':
 			print("# exCalc v" + __version__ + ", " + __date__)
-			print("# Supported operators: + - * / ^ ( ) = == != < > >= <=")
+			print("# Supported operators: + - * / ^ ( ) = == != < > >= <= && ||")
 			print("# Comments begin with a hash sign, as these lines do.")
 			print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
 			print("# a = 5")
@@ -199,6 +199,7 @@ def __evaluate_tree(tree):
 			print("# " + ", ".join(sorted(__initial_state)))
 			print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
 			print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
+			print("# See excalc-repl.py for more information.")
 		else:
 			raise SyntaxError("Unknown command {}".format(cmd_name))
 
