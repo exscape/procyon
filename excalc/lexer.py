@@ -5,6 +5,7 @@ from .version import __prompt__
 tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',           # Number literals
 		  'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT', # Math operators
 		  'NOT',
+		  'ANDAND', 'OROR',
 		  'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',       # Comparison operators
 		  'LPAREN', 'RPAREN', 'ASSIGN', 'COMMA', 'SEMICOLON',
 		  'IDENT', 'COMMAND')
@@ -47,6 +48,8 @@ t_RPAREN = r'\)'
 t_NOT = r'!'
 t_NOTEQ = r'!='
 t_EQEQ = r'=='
+t_ANDAND = r'&&'
+t_OROR = r'\|\|'
 t_GE = r'>='
 t_LE = r'<='
 t_LT = r'<'

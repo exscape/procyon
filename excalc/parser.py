@@ -4,10 +4,13 @@ from .version import __prompt__
 from .lexer import tokens
 
 # Operator associativity and precedence rules
-# From lowest to highest precedence
+# From lowest to highest precedence.
+# These are similar to C, but not identical (a > b > c is more useful here than in C).
 precedence = (
 	  ("nonassoc", "SEMICOLON"),
 	  ("right", "ASSIGN"),
+	  ("left", "OROR"),
+	  ("left", "ANDAND"),
 	  ("left", "EQEQ", "NOTEQ", "LT", "GT", "LE", "GE"),
 	  ("left", "PLUS", "MINUS"),
 	  ("left", "TIMES", "DIVIDE"),
@@ -95,47 +98,59 @@ def p_exp_uminus(p):
 # a > b >= c        -> ('comp', [('ident', 'a'), '>', ('ident', 'b'), '>=', ('ident', 'c')])
 # (a > b >= c) == d -> ('comp', [('comp', [('ident', 'a'), '>', ('ident', 'b'), '>=', ('ident', 'c')]), '==', ('ident', 'd')])
 
-# Group all comparison operators as an element, to simplify comparisons below
-def p_compop(p):
-	'''compop : EQEQ
-	          | NOTEQ
-	          | LT
-	          | GT
-	          | LE
-	          | GE'''
-	p[0] = p[1]
+# Handle single comparisons such as a > b, a == b etc.
+# a and b may be more complex expressions, though.
+def p_comp_one(p):
+	'''comp : exp EQEQ exp
+			| exp NOTEQ exp
+			| exp LT exp
+			| exp LE exp
+			| exp GT exp
+			| exp GE exp'''
 
-# Handle comparisons; both a > b and a > b > c ... style expressions are handled here
-def p_comp(p):
-	'comp : exp compop exp'
+	p[0] = ("comp", [p[1], p[2], p[3]])
 
-	if p[3][0] != 'comp':
-		# Single comparison (or just the first in a chain)
-		p[0] = ('comp', [p[1], p[2], p[3]])
-	else:
-		# Chained comparison: a bit trickier
-		p[0] = ('comp', [p[1]] + [p[2]] + p[3][1] )
+# Handle chained comparisons such as a > b > c, a < b <= c > d != e, and so on.
+# The rule above is always executed first. For the example of a > b > c == d:
+# comp_one: a > b is turned it (a > b)
+# comp_chained: (a > b) > c is turned into a > b > c
+# comp_chained: (a > b > c) == d is turned into a > b > c == d
+#
+# Note that if the input is (verbatim) "(a > b > c) == d" the behaviour is
+# different, by design! In that case, "(a > b > c)" is evaluated first,
+# to either 1 or 0. That boolean is then compared against d.
+def p_comp_chained(p):
+	'''comp : comp EQEQ exp
+			| comp NOTEQ exp
+			| comp LT exp
+			| comp LE exp
+			| comp GT exp
+			| comp GE exp'''
 
-# Comparisons such as c == (a > b) fail without this rule.
-# The other case, e.g. (a > b) == c, is handled correctly by p_comp above.
-def p_comp_paren(p):
-	'comp : exp compop LPAREN comp RPAREN'
-	p[0] = ('comp', [p[1], p[2], p[4]])
+	p[0] = ("comp", p[1][1] + [p[2], p[3]])
 
 ###
 ### EXPRESSIONS
 ###
-
-# Comparisons are expressions
-def p_exp_comp(p):
-	'exp : comp'
-	p[0] = p[1]
 
 # (exp) is itself an expression. The parser handles the grouping and so on,
 # so we only need to copy the expression here.
 def p_exp_paren(p):
 	'exp : LPAREN exp RPAREN'
 	p[0] = p[2]
+
+# Logical operators; these follow the same rule as binops, but are
+# separated to make the interpreter code nicer.
+def p_exp_logical(p):
+	'''exp : exp OROR exp
+	       | exp ANDAND exp'''
+
+	p[0] = ("logical", p[1], p[2], p[3])
+
+# Comparisons are expressions
+def p_exp_comp(p):
+	'exp : comp'
+	p[0] = p[1]
 
 # Handle all integer types
 def p_exp_num(p):

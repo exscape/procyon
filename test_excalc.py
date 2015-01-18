@@ -182,6 +182,61 @@ def test_not():
 	assert ev("!!(12 + 4)") == [1]
 	assert ev("!2^5") == [0]
 
+def test_and_1():
+	assert ev("1 && 1") == [1]
+	assert ev("1 && 0") == [0]
+	assert ev("0 && 1") == [0]
+	assert ev("0 && 0") == [0]
+	assert ev("12 && 3") == [1]
+	assert ev("2 && 3 && 1") == [1]
+	assert ev("2 && 0 && 1") == [0]
+	assert ev("2 && 1 && 0") == [0]
+	assert ev("2 && 1 && 4 && 2^3 && !0") == [1]
+
+def test_or_1():
+	assert ev("1 || 1") == [1]
+	assert ev("1 || 0") == [1]
+	assert ev("0 || 1") == [1]
+	assert ev("0 || 0") == [0]
+	assert ev("0 || 0 || 1") == [1]
+	assert ev("0 || 0 || 1 || 0") == [1]
+	assert ev("123 || 0") == [1]
+	assert ev("0 || 2^4") == [1]
+	assert ev("0 || !0") == [1]
+	assert ev("0 || !(0 + sin(0.1))") == [0]
+
+def test_and_or_1():
+	assert ev("1 || 0 && 0") == [1]
+	assert ev("1 || 0 && 1") == [1]
+	assert ev("0 || 0 && 1") == [0]
+	assert ev("0 || 1 && !0") == [1]
+	assert ev("12 && 5 || 0") == [1]
+	assert ev("5 && 0 || 0") == [0]
+	assert ev("5 && 0 || 1") == [1]
+	assert ev("5 && 0 || (0 || 1)") == [1]
+	assert ev("5 && 0 || (0 && 1)") == [0]
+
+def test_and_or_2():
+	assert ev("(1 || 0) && 0") == [0]
+	assert ev("(2^1 && !!5) || (10 && 1)") == [1]
+	assert ev("(2^1 && !!5) || (10 && 0)") == [1]
+	assert ev("(2^1 && !5) || (10 && 0)") == [0]
+	assert ev("((1 && 0) || 4) && 1 || 4") == [1]
+
+def test_and_or_3():
+	assert ev("1 == (5>4>3 && 2>6 || 2^3 > 5) != 0") == [1]
+	assert ev("3 > 5 || 6 > 4") == [1]
+	assert ev("5 > 4 && (4 > 3) == (5 > 4 > 3)") == [1]
+	assert ev("5 < 4 && 1 > 4 || 1") == [1]
+	assert ev("1 == 15 || 15 == 1") == [0]
+	assert ev("a=5;b=10;c=15; a+b == c && a == c-b && (a+b+c == 15 || a+b == 15)") == [5,10,15,1]
+	assert ev("sin(0) || cos(0)") == [1]
+	assert ev("0 && 1; 10.1 < 12 < 44 && (1 > 2 || 3)") == [0, 1]
+	with pytest.raises(KeyError):
+		ev("0 && (xyz = sin(1)); xyz")
+	with pytest.raises(KeyError):
+		ev("xyz + 1")
+
 def test_variables():
 	assert ev("a = 5") == [5]
 	assert ev("a == 5") == [1]
@@ -202,3 +257,5 @@ def test_builtin_functions():
 def test_misc():
 	assert ev("log10(10^3)^3 + 3 * 3^3") == [108]
 	assert ev("(( (1-3)^2 - 5) + log2(128) - 1)") == [5]
+
+# TODO: test short-circuit evaluation, when possible without ugly hacks etc.

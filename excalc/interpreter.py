@@ -2,8 +2,8 @@
 
 import math
 import sys
-from .version import __version__, __date__, __debugparse__
 from ply import lex, yacc
+from .version import __version__, __date__, __debugparse__
 import excalc.lexer as lexer
 import excalc.parser as parser
 
@@ -69,6 +69,31 @@ def __evaluate_tree(tree):
 		elif op == '^':
 			return left ** right
 
+	elif kind == "logical":
+		# && and || are a bit special in that they must use
+		# short-circuit evaluation.
+		# (I assume that *could* be used for other comparisons as well, but
+		#  it seems more important for these.)
+
+		(left_child, op, right_child) = tree[1:]
+
+		left = __evaluate_tree(left_child)
+
+		# Test if we can short-circuit
+		if op == '||' and left:
+			return 1
+		elif op == '&&' and not left:
+			return 0
+
+		# We couldn't, so we must evaluate the right side also
+		right = __evaluate_tree(right_child)
+
+		# If this is an AND operation, we know the left side is true already,
+		# so if the right side is true, we return 1.
+		# If this is an OR operation, we know the left side is *false* already,
+		# so if the right side is true, we return 1.
+		return 1 if right else 0
+
 	elif kind in ("int", "float"):
 		return tree[1]
 
@@ -106,7 +131,7 @@ def __evaluate_tree(tree):
 	elif kind == "uminus":
 		return -__evaluate_tree(tree[1])
 	elif kind == "not":
-		return not __evaluate_tree(tree[1])
+		return int(not __evaluate_tree(tree[1]))
 	elif kind == "ident":
 		name = tree[1]
 		if name in __functions:
