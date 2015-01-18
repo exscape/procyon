@@ -44,6 +44,9 @@ while True:
 			print ("Overflow: result is out of range")
 		except SyntaxError as e:
 			print("Syntax error: {}".format(str(e)))
+		except RuntimeError as e:
+			print("BUG: {}".format(str(e)))
+			sys.exit(1)
 
 	except (KeyboardInterrupt, EOFError):
 		print("")

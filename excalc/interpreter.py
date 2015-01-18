@@ -205,5 +205,4 @@ def __evaluate_tree(tree):
 
 		return None
 
-	print("BUG: reached end of __evaluate_tree for kind={}, tree: {}".format(kind,tree))
-	sys.exit(1)
+	raise RuntimeError('BUG: reached end of __evaluate_tree for kind={}, tree: {}'.format(kind,tree))

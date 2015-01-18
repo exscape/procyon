@@ -296,6 +296,9 @@ def test_builtin_functions():
 	assert ev("round(123.456, 0)") == [123]
 	assert ev("round(123456, -3)") == [123000]
 
+	with pytest.raises(SyntaxError):
+		ev("blah(123)")
+
 def test_misc():
 	assert ev("log10(10^3)^3 + 3 * 3^3") == [108]
 	assert ev("(( (1-3)^2 - 5) + log2(128) - 1)") == [5]
