@@ -10,6 +10,10 @@ tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',           # Number literals
 		  'LPAREN', 'RPAREN', 'ASSIGN', 'COMMA', 'SEMICOLON',
 		  'IDENT', 'COMMAND')
 
+def t_newline(t):
+	r'\n+'
+	t.lexer.lineno += len(t.value)
+
 # Matches e.g. 1., 1.4, 2.3e2 (230), 4e-3 (0.004)
 def t_FLOAT(t):
 	r'\d+ (?:\.\d*)? e [+-]? \d+ | \d+\.\d*'
@@ -62,8 +66,14 @@ t_SEMICOLON = r';'
 
 # Comments begin with # and last one line; whitespace outside of strings etc. is ignored
 t_ignore_COMMENT = r'\#.*'
-t_ignore = "\t\r\n "
+t_ignore = "\t\r\v "
+
+def column(token):
+	last_cr = token.lexer.lexdata.rfind('\n', 0, token.lexpos)
+	if last_cr < 0:
+		return token.lexpos + 1
+	else:
+		return token.lexpos - last_cr
 
 def t_error(t):
-	print (" " * (t.lexpos + len(__prompt__)) + "^")
-	raise SyntaxError('Unexpected {} at input position {}'.format(t.value[0], t.lexpos))
+	raise SyntaxError('Unexpected {} at input position {}:{}'.format(t.value[0], t.lineno, column(t)))

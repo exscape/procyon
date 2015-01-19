@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from .version import __prompt__
-from .lexer import tokens
+from .lexer import tokens, column
 
 # Operator associativity and precedence rules
 # From lowest to highest precedence.
@@ -23,8 +23,7 @@ def p_error(p):
 	if p is None:
 		raise SyntaxError('Unexpected end of input; unbalanced parenthesis or missing argument(s)?')
 	else:
-		print (" " * (p.lexpos + len(__prompt__)) + "^")
-		raise SyntaxError('Unexpected {} at input position {}'.format(p.type, p.lexpos))
+		raise SyntaxError('Unexpected {}({}) at input position {}:{}'.format(p.type, p.value, p.lineno, column(p)))
 
 ###
 ### TOP LEVEL ELEMENTS
@@ -112,12 +111,12 @@ def p_comp_one(p):
 
 # Handle chained comparisons such as a > b > c, a < b <= c > d != e, and so on.
 # The rule above is always executed first. For the example of a > b > c == d:
-# comp_one: a > b is turned it (a > b)
+# comp_one: a > b is turned into (a > b)
 # comp_chained: (a > b) > c is turned into a > b > c
 # comp_chained: (a > b > c) == d is turned into a > b > c == d
 #
 # Note that if the input is (verbatim) "(a > b > c) == d" the behaviour is
-# different, by design! In that case, "(a > b > c)" is evaluated first,
+# different, by design! In that case, "a > b > c" is evaluated first,
 # to either 1 or 0. That boolean is then compared against d.
 def p_comp_chained(p):
 	'''comp : comp EQEQ exp

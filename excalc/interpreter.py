@@ -20,7 +20,7 @@ __functions = {'sin': 1, 'cos': 1, 'tan': 1,
 __initial_state = {'e': math.e, 'pi': math.pi}
 __state = __initial_state.copy()
 
-def evaluate(expr):
+def evaluate_expr(expr):
 	""" Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
 
 	if len(expr.rstrip()) == 0:
@@ -29,6 +29,21 @@ def evaluate(expr):
 	lex_lexer = lex.lex(module=lexer, debug=False, optimize=True)
 	yacc_parser = yacc.yacc(module=parser, debug=False, start="toplevel")
 	parse_tree = yacc_parser.parse(expr, lexer=lex_lexer, debug=__debugparse__)
+
+	if __debugparse__:
+		print('ENTIRE TREE:', parse_tree)
+
+	return __evaluate_all(parse_tree)
+
+def evaluate(s):
+	""" Evaluates an entire program, in the form of a string """
+
+	if len(s.rstrip()) == 0:
+		return None
+
+	lex_lexer = lex.lex(module=lexer, debug=False, optimize=True)
+	yacc_parser = yacc.yacc(module=parser, debug=False, start="toplevel")
+	parse_tree = yacc_parser.parse(s, lexer=lex_lexer, debug=__debugparse__)
 
 	if __debugparse__:
 		print('ENTIRE TREE:', parse_tree)

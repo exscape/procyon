@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Simple calculator; written for Python 3 (3.4.2).
-# Thomas Backman (serenity@exscape.org), 2015-01-14 - 2015-01-16
+# Thomas Backman (serenity@exscape.org), 2015-01-14 - 2015-01-19
 
 # Features:
 # * Readline support for history and input editing
@@ -25,24 +25,34 @@
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: remember to add the above to the .help listing
 
-from excalc.interpreter import evaluate
+# TODO: inline if-statements (and unless) -- ternary can NOT use if/else syntax,
+#       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or
+#       return "x if y else z". Might be easy to parse, but it doesn't look great either way.
+
+from excalc.interpreter import evaluate, evaluate_expr
 from excalc.version import __version__, __date__, __prompt__
 
 import sys
 import readline
+import re
 
 while True:
 	try:
 		input_str = input(__prompt__)
 		try:
-			results = evaluate(input_str)
+			results = evaluate_expr(input_str)
 			if results is not None and len([r for r in results if r is not None]) > 0:
 				print ("\n".join([str(r) for r in results if r is not None]))
 		except KeyError as e:
-			print ("Error: {}".format(str(e)[1:-1]))
+			print("Error: {}".format(str(e)[1:-1]))
 		except OverflowError:
-			print ("Overflow: result is out of range")
+			print("Overflow: result is out of range")
 		except SyntaxError as e:
+			m = re.search('input position (\d+):(\d+)$', str(e))
+			if m:
+				(line, pos) = (int(m.group(1)), int(m.group(2)))
+				assert line == 1
+				print(" " * (pos + len(__prompt__)) + "^")
 			print("Syntax error: {}".format(str(e)))
 		except RuntimeError as e:
 			print("BUG: {}".format(str(e)))

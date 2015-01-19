@@ -1,8 +1,12 @@
 *.swp
 *.pyc
 *.pyo
+*.swp
+*.swo
+*.swn
 parser.out
 parsetab.py
 __pycache__
 lextab.py
 Session.vim
+.coverage
