@@ -29,34 +29,23 @@ def p_error(p):
 ### TOP LEVEL ELEMENTS
 ###
 
-# A set of expressions such as "1+2 ; sqrt(2)" is allowed at the top level
-def p_toplevel_expset(p):
-	'toplevel : expset'
+# A list of statements is allowed at the top level
+# (Note that since we have statement -> exp, this means that
+#  a list of expressions is also allowed; or a mix of the two.)
+def p_toplevel_statements(p):
+	'toplevel : statements'
 	p[0] = p[1]
 
 # Commands (e.g. ".help") are also allowed at the top level
+# TODO: this should probably not be in the parser, now that
+# TODO: statements and other programming-related things are
 def p_toplevel_command(p):
 	'toplevel : command'
 	p[0] = [p[1]]
 
-# A set of expressions can be a singleton list of [expression], or...
-def p_expset_one(p):
-	'expset : exp'
-	p[0] = [p[1]]
-
-# ... such a list, concatenated with a list of more expressions
-def p_expset_many(p):
-	' expset : exp SEMICOLON expset'
-	p[0] = [p[1]] + p[3]
-
-# Expression sets may be empty
-def p_expset_empty(p):
-	'expset : '
-	p[0] = []
-
-###
+##
 ### MATH OPERATIONS
-###
+##
 
 # All math operations with two operands
 def p_exp_binop(p):
@@ -81,9 +70,9 @@ def p_exp_uminus(p):
 	# Matches -exp and uses precedence UMINUS instead of the usual MINUS
 	p[0] = ("uminus", p[2])
 
-###
+##
 ### COMPARISONS
-###
+##
 
 ### All of the following need to work:
 ### 5 > 4: True
@@ -128,9 +117,9 @@ def p_comp_chained(p):
 
 	p[0] = ("comp", p[1][1] + [p[2], p[3]])
 
-###
+##
 ### EXPRESSIONS
-###
+##
 
 # (exp) is itself an expression. The parser handles the grouping and so on,
 # so we only need to copy the expression here.
@@ -159,6 +148,10 @@ def p_exp_num(p):
 	       | BIN'''
 	p[0] = ("int", p[1])
 
+def p_exp_string(p):
+	'exp : STRING'
+	p[0] = ("string", p[1])
+
 # Floats are stored differently than ints
 def p_exp_float(p):
 	'exp : FLOAT'
@@ -173,8 +166,16 @@ def p_exp_ident(p):
 
 # Function calls are expressions (their return values are, at least!)
 def p_exp_func(p):
-	'exp : ident LPAREN args RPAREN'
+	'exp : ident LPAREN optargs RPAREN'
 	p[0] = ("func", p[1], p[3])
+
+def p_optargs_none(p):
+	'optargs : '
+	p[0] = []
+
+def p_optargs_args(p):
+	'optargs : args'
+	p[0] = p[1]
 
 # Function arguments
 def p_args_many(p):
@@ -186,9 +187,53 @@ def p_args_one(p):
 	'args : exp'
 	p[0] = [p[1]]
 
-###
+##
+### MULTIPLE STATEMENTS
+##
+
+# Expressions can be statements. Most notably,
+# the expression "xyz = 10" needs to be allowed on a line by itself,
+# if followed by a semicolon (like all other statements).
+
+def p_statements_one(p):
+	'statements : statement'
+	p[0] = [p[1]]
+
+def p_statements_many(p):
+	'statements : statement SEMICOLON statements'
+	p[0] = [p[1]] + p[3]
+
+def p_statements_block(p):
+	'statements : block_statement statements'
+	p[0] = [p[1]] + p[2]
+
+def p_statements_empty(p):
+	'statements : '
+	p[0] = []
+
+def p_block(p):
+	'block : LBRACE statements RBRACE'
+	p[0] = p[2]
+
+##
+### SINGLE STATEMENTS
+##
+
+def p_statement_if(p):
+	'block_statement : IF exp block'
+	p[0] = ('if', p[2], p[3], None)
+
+def p_statement_if_else(p):
+	'block_statement : IF exp block ELSE block'
+	p[0] = ('if', p[2], p[3], p[5])
+
+def p_statement_exp(p):
+	'statement : exp'
+	p[0] = p[1]
+
+##
 ### MISCELLANEOUS RULES
-###
+##
 
 # Simple enough.
 def p_ident(p):

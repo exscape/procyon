@@ -2,17 +2,16 @@
 
 from .version import __prompt__
 
-tokens = ('INT', 'OCT', 'BIN', 'HEX', 'FLOAT',           # Number literals
+keywords = ('if', 'else', 'func', 'return')
+
+tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',           # Number literals
 		  'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT', # Math operators
 		  'NOT',
 		  'ANDAND', 'OROR',
 		  'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',       # Comparison operators
-		  'LPAREN', 'RPAREN', 'ASSIGN', 'COMMA', 'SEMICOLON',
-		  'IDENT', 'COMMAND')
-
-def t_newline(t):
-	r'\n+'
-	t.lexer.lineno += len(t.value)
+		  'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'SEMICOLON', 'COMMA',
+		  'ASSIGN',
+		  'IDENT', 'COMMAND', 'STRING'] + [k.upper() for k in keywords]
 
 # Matches e.g. 1., 1.4, 2.3e2 (230), 4e-3 (0.004)
 def t_FLOAT(t):
@@ -40,8 +39,24 @@ def t_INT(t):
 	t.value = int(t.value)
 	return t
 
+def t_IDENT(t):
+	r'[A-Za-z_][A-Za-z0-9_]*'
+	if t.value in keywords:
+		t.type = t.value.upper()
+	return t
+
+# Match a double quote, followed by any number of:
+# 1) Anything except backslashes and quotes, or
+# 2) a backslash followed by anything,
+# finally followed by a lone quote.
+# This matches all strings including ones with
+# escaped double quotes inside.
+def t_STRING(t):
+	r'"(?:[^"\\]|\\.)*"'
+	t.value = t.value[1:-1] # Strip quotes
+	return t
+
 # Tokens that don't need any transformations
-t_IDENT = r'[A-Za-z_][A-Za-z0-9_]*'
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
@@ -58,6 +73,8 @@ t_GE = r'>='
 t_LE = r'<='
 t_LT = r'<'
 t_GT = r'>'
+t_LBRACE = r'\{'
+t_RBRACE = r'\}'
 t_ASSIGN = r'='
 t_COMMA = r','
 t_COMMAND = r'^\.[a-zA-Z]+\s*$'
@@ -67,6 +84,10 @@ t_SEMICOLON = r';'
 # Comments begin with # and last one line; whitespace outside of strings etc. is ignored
 t_ignore_COMMENT = r'\#.*'
 t_ignore = "\t\r\v "
+
+def t_newline(t):
+	r'\n+'
+	t.lexer.lineno += len(t.value)
 
 def column(token):
 	last_cr = token.lexer.lexdata.rfind('\n', 0, token.lexpos)

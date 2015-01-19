@@ -14,7 +14,7 @@ __functions = {'sin': 1, 'cos': 1, 'tan': 1,
 			   'sinh': 1, 'cosh': 1, 'tanh': 1,
 			   'asinh': 1, 'acosh': 1, 'atanh': 1,
 			   'abs': 1, 'sqrt': 1, 'ceil': 1, 'floor': 1,
-			   'trunc': 1, 'round': 2}
+			   'trunc': 1, 'round': 2, 'print': -1}
 
 # Built-in constants; there are overwritable by design
 __initial_state = {'e': math.e, 'pi': math.pi}
@@ -26,8 +26,8 @@ def evaluate_expr(expr):
 	if len(expr.rstrip()) == 0:
 		return None
 
-	lex_lexer = lex.lex(module=lexer, debug=False, optimize=True)
-	yacc_parser = yacc.yacc(module=parser, debug=False, start="toplevel")
+	lex_lexer = lex.lex(module=lexer, debug=False, optimize=False)
+	yacc_parser = yacc.yacc(module=parser, debug=True, start="toplevel")
 	parse_tree = yacc_parser.parse(expr, lexer=lex_lexer, debug=__debugparse__)
 
 	if __debugparse__:
@@ -41,8 +41,8 @@ def evaluate(s):
 	if len(s.rstrip()) == 0:
 		return None
 
-	lex_lexer = lex.lex(module=lexer, debug=False, optimize=True)
-	yacc_parser = yacc.yacc(module=parser, debug=False, start="toplevel")
+	lex_lexer = lex.lex(module=lexer, debug=False, optimize=False)
+	yacc_parser = yacc.yacc(module=parser, debug=True, start="toplevel")
 	parse_tree = yacc_parser.parse(s, lexer=lex_lexer, debug=__debugparse__)
 
 	if __debugparse__:
@@ -73,6 +73,15 @@ def __evaluate_tree(tree):
 		left = __evaluate_tree(left_child)
 		right = __evaluate_tree(right_child)
 
+		if type(left) != type(right) and not (
+			type(left) in (int, float) and type(right) in (int, float)):
+			raise TypeError("binary operation on expressions of different types: {} {} {}".format(left, op, right))
+
+		if type(left) == str and op != '+':
+			# If true, both left and right are strings.
+			raise TypeError("operator {} is not defined on strings".format(op))
+
+		# TODO: static typing
 		if op == '+':
 			return left + right
 		elif op == '-':
@@ -111,7 +120,8 @@ def __evaluate_tree(tree):
 
 	elif kind in ("int", "float"):
 		return tree[1]
-
+	elif kind == "string":
+		return tree[1]
 	elif kind == "comp":
 		# chunk(['a', '>', 'b', '>=', 'c', '==', 'd']) generates the list
 		# [['a', '>', 'b'], ['b', '>=', 'c'], ['c', '==', 'd']]
@@ -150,7 +160,7 @@ def __evaluate_tree(tree):
 	elif kind == "ident":
 		name = tree[1]
 		if name in __functions:
-			raise SyntaxError("can't assign to built-in function \"{}\"".format(name))
+			raise SyntaxError("can't use built-in function \"{}\" as a variable".format(name))
 
 		try:
 			return __state[name]
@@ -172,10 +182,15 @@ def __evaluate_tree(tree):
 		if not func_name in __functions:
 			raise SyntaxError('unknown function "{}"'.format(func_name))
 
-		if len(args) != __functions[func_name]:
+		if __functions[func_name] > 0 and len(args) != __functions[func_name]:
 			raise SyntaxError('{} requires exactly {} arguments, {} provided'.format(func_name, __functions[func_name], len(args)))
 
 		args = [__evaluate_tree(arg) for arg in args]
+
+		if func_name == "print":
+			print(*args)
+			return None
+
 
 		func = None
 		try:
@@ -217,6 +232,14 @@ def __evaluate_tree(tree):
 			print("# See excalc-repl.py for more information.")
 		else:
 			raise SyntaxError("Unknown command {}".format(cmd_name))
+
+	elif kind == "if":
+		# TODO: scoping!
+		(cond, then_body, else_body) = tree[1:]
+		if __evaluate_tree(cond):
+			return __evaluate_all(then_body)
+		elif else_body:
+			return __evaluate_all(else_body)
 
 		return None
 

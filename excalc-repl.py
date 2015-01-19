@@ -23,7 +23,12 @@
 # TODO: refactor to better Python style
 # TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
+# TODO: elseif
 # TODO: remember to add the above to the .help listing
+
+# TODO: proper scoping of variables
+# TODO: types
+# TODO: tests for if/else, functions, strings and so on!
 
 # TODO: inline if-statements (and unless) -- ternary can NOT use if/else syntax,
 #       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or
@@ -35,6 +40,13 @@ from excalc.version import __version__, __date__, __prompt__
 import sys
 import readline
 import re
+
+def print_error_pos(e):
+	m = re.search('input position (\d+):(\d+)$', str(e))
+	if m:
+		(line, pos) = (int(m.group(1)), int(m.group(2)))
+		assert line == 1
+		print(" " * (pos - 1 + len(__prompt__)) + "^")
 
 while True:
 	try:
@@ -48,12 +60,10 @@ while True:
 		except OverflowError:
 			print("Overflow: result is out of range")
 		except SyntaxError as e:
-			m = re.search('input position (\d+):(\d+)$', str(e))
-			if m:
-				(line, pos) = (int(m.group(1)), int(m.group(2)))
-				assert line == 1
-				print(" " * (pos + len(__prompt__)) + "^")
+			print_error_pos(e)
 			print("Syntax error: {}".format(str(e)))
+		except TypeError as e:
+			print("Type error: {}".format(str(e)))
 		except RuntimeError as e:
 			print("BUG: {}".format(str(e)))
 			sys.exit(1)
