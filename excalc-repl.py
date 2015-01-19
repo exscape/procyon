@@ -20,13 +20,14 @@
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
 
+# TODO: update comment block above when statements are in
 # TODO: refactor to better Python style
-# TODO: support custom functions?
 # TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: elseif
 # TODO: remember to add the above to the .help listing
 
 # TODO: proper scoping of variables
+# TODO: test and/or support nested functions
 # TODO: types
 # TODO: tests for if/else, functions, strings and so on!
 

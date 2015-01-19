@@ -9,26 +9,32 @@ import sys
 import re
 import readline
 
-#program = """
-#func fac(n) {
-	#if n < 2 { return 1; }
-	#else { return n * fac(n); }
-#}
-#"""
-
 program = """
-x = 4;
-y = 2;
-if x > 3 {
-	print("Setting y to some value");
-	y = x^2 + 1 - sin(x)^2;
+loops = 0;
+func fac(n) {
+	loops = loops + 1;
+	func test(x) { print("Nested function says:", x); }
+    if n < 2 { return 1; }
+    else { test(n); return n * fac(n - 1); }
 }
-else {
-	print("Setting y to 5");
-	y = 5;
-}
-print("The value of y is", y);
+
+print("fac(5) =", fac(5));
+print("number of loops:", loops);
 """
+
+#program = """
+#x = 4;
+#y = 2;
+#if x > 3 {
+	#print("Setting y to some value");
+	#y = x^2 + 1 - sin(x)^2;
+#}
+#else {
+	#print("Setting y to 5");
+	#y = 5;
+#}
+#print("The value of y is", y);
+#"""
 
 #print(program.strip())
 #print('---------------------------------')
@@ -49,5 +55,6 @@ except RuntimeError as e:
 	print(str(e))
 
 ### TODO: test ^ error pointing with comments
+### TODO: fix ^ pointing with tab indentation
 ### TODO: catch all possible exceptions
 ### TODO: test multiple semicolons, in case the parser adds empty statements etc.

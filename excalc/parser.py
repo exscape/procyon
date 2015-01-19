@@ -165,9 +165,9 @@ def p_exp_ident(p):
 	p[0] = p[1]
 
 # Function calls are expressions (their return values are, at least!)
-def p_exp_func(p):
+def p_exp_call(p):
 	'exp : ident LPAREN optargs RPAREN'
-	p[0] = ("func", p[1], p[3])
+	p[0] = ("call", p[1], p[3])
 
 def p_optargs_none(p):
 	'optargs : '
@@ -226,6 +226,18 @@ def p_statement_if(p):
 def p_statement_if_else(p):
 	'block_statement : IF exp block ELSE block'
 	p[0] = ('if', p[2], p[3], p[5])
+
+def p_statement_func(p):
+	'block_statement : FUNC ident LPAREN optargs RPAREN block'
+	p[0] = ("func", p[2], p[4], p[6])
+
+def p_statement_return(p):
+	'statement : RETURN'
+	p[0] = ("return", None)
+
+def p_statement_return_arg(p):
+	'statement : RETURN exp'
+	p[0] = ("return", p[2])
 
 def p_statement_exp(p):
 	'statement : exp'
