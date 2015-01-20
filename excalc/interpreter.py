@@ -9,7 +9,7 @@ from .version import __version__, __date__, __debugparse__
 import excalc.lexer as lexer
 import excalc.parser as parser
 
-__all__ = ['evaluate', 'evaluate_expr']
+__all__ = ['evaluate', 'evaluate_expr', 'evaluate_command']
 
 # assign needs to write to the correct env
 # ident needs to read from it
@@ -317,46 +317,6 @@ def __evaluate_tree(tree, scope):
 
         return func(*args)
 
-    elif kind == "command":
-        cmd_name = tree[1]
-        if cmd_name == 'vars':
-            # Bit of a mess... Fetch each variable name.
-            # Ignore _, and ignore pre-defined constants (e.g. e, pi)
-            # *UNLESS* the user has assigned other values to those names.
-            # XXX: Only lists values in the global scope. This by design, at least for now;
-            # commands aren't intended for use when programming, but only in the REPL.
-            vars = [v for v in __global_scope[1] if (
-                v != '_' and not (
-                    v in __initial_state and __initial_state[v] == __global_scope[1][v]))]
-
-            for var in sorted(vars):
-                print("{}:\t{}".format(var, __global_scope[1][var]))
-        elif cmd_name == 'help':
-            print("# exCalc v" + __version__ + ", " + __date__)
-            print("# Supported operators: + - * / ^ ( ) = == != < > >= <= && ||")
-            print("# Comments begin with a hash sign, as these lines do.")
-            print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
-            print("# a = 5")
-            print("# a == 5 # returns True")
-            print("#")
-            print("# Supported commands:")
-            print("# .help - this text")
-            print("# .vars - show all variables, except non-modified builtins")
-            print("#")
-            print("# Supported functions (number of arguments, if not 1):")
-            print("# " + ", ".join(sorted(["{}{}".format(f, "({})".format(
-                __functions[f]) if __functions[f] > 1 else "") for f in __functions])))
-            print("#")
-            print("# Built-in constants (names are re-assignable):")
-            print("# " + ", ".join(sorted(__initial_state)))
-            print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
-            print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
-            print("# See excalc-repl.py for more information.")
-        else:
-            raise NameError("unknown command {}".format(cmd_name))
-
-        return None
-
     elif kind == "if":
         new_scope = _new_scope(scope, [], [])
         (cond, then_body, else_body) = tree[1:]
@@ -413,3 +373,46 @@ def __evaluate_function(func, args, scope):
         return ret.args[0]
 
     return None
+
+def evaluate_command(cmd_name):
+    """ Evaluate a command, as entered in the REPL.
+
+        Commands are not supported for programming; they're merely
+        intended as minor helpers for interactive use.
+    """
+
+    if cmd_name == 'vars':
+        # Bit of a mess... Fetch each variable name.
+        # Ignore _, and ignore pre-defined constants (e.g. e, pi)
+        # *UNLESS* the user has assigned other values to those names.
+        # XXX: Only lists values in the global scope. This by design, at least for now;
+        # commands aren't intended for use when programming, but only in the REPL.
+        vars = [v for v in __global_scope[1] if (
+            v != '_' and not (
+                v in __initial_state and __initial_state[v] == __global_scope[1][v]))]
+
+        for var in sorted(vars):
+            print("{}:\t{}".format(var, __global_scope[1][var]))
+    elif cmd_name == 'help':
+        print("# exCalc v" + __version__ + ", " + __date__)
+        print("# Supported operators: + - * / ^ ( ) = == != < > >= <= && ||")
+        print("# Comments begin with a hash sign, as these lines do.")
+        print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
+        print("# a = 5")
+        print("# a == 5 # returns True")
+        print("#")
+        print("# Supported commands (in the REPL only):")
+        print("# .help - this text")
+        print("# .vars - show all variables, except non-modified builtins")
+        print("#")
+        print("# Supported functions (number of arguments, if not 1):")
+        print("# " + ", ".join(sorted(["{}{}".format(f, "({})".format(
+            __functions[f]) if __functions[f] > 1 else "") for f in __functions])))
+        print("#")
+        print("# Built-in constants (names are re-assignable):")
+        print("# " + ", ".join(sorted(__initial_state)))
+        print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
+        print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
+        print("# See excalc-repl.py for more information.")
+    else:
+        raise NameError("unknown command {}".format(cmd_name))

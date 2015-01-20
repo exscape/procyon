@@ -13,7 +13,7 @@ tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals
           'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',         # Comparison operators
           'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'SEMICOLON', 'COMMA',
           'ASSIGN',
-          'IDENT', 'COMMAND', 'STRING'] + [k.upper() for k in keywords]
+          'IDENT', 'STRING'] + [k.upper() for k in keywords]
 
 # Matches e.g. 1., 1.4, 2.3e2 (230), 4e-3 (0.004)
 def t_FLOAT(t):
@@ -79,7 +79,6 @@ t_LBRACE = r'\{'
 t_RBRACE = r'\}'
 t_ASSIGN = r'='
 t_COMMA = r','
-t_COMMAND = r'^\.[a-zA-Z]+\s*$'
 t_SEMICOLON = r';'
 # NOTE: don't add token rules for IF, ELSE etc.; see ply docs section 4.3
 

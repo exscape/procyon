@@ -39,13 +39,6 @@ def p_toplevel_statements(p):
     'toplevel : statements'
     p[0] = p[1]
 
-# Commands (e.g. ".help") are also allowed at the top level
-# TODO: this should probably not be in the parser, now that
-# TODO: statements and other programming-related things are
-def p_toplevel_command(p):
-    'toplevel : command'
-    p[0] = [p[1]]
-
 ##
 ### MATH OPERATIONS
 ##
@@ -259,8 +252,3 @@ def p_ident(p):
 def p_assign(p):
     'exp : ident ASSIGN exp'
     p[0] = ("assign", p[1], p[3])
-
-# All commands begin with a dot; we strip that away here
-def p_command(p):
-    'command : COMMAND'
-    p[0] = ("command", p[1][1:])

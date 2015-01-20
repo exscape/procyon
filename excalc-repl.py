@@ -33,7 +33,7 @@
 #       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or
 #       return "x if y else z". Might be easy to parse, but it doesn't look great either way.
 
-from excalc.interpreter import evaluate, evaluate_expr
+from excalc.interpreter import evaluate, evaluate_expr, evaluate_command
 from excalc.version import __version__, __date__, __prompt__
 
 import sys
@@ -49,9 +49,17 @@ def print_error_pos(e):
 
 while True:
     try:
-        input_str = input(__prompt__)
+        input_str = input(__prompt__).strip()
         try:
-            results = evaluate_expr(input_str)
+            if len(input_str) > 0 and input_str[0] == '.':
+                if len(input_str.split()) > 1:
+                    print('Invalid command:', input_str)
+                else:
+                    evaluate_command(input_str[1:])
+                continue
+            else:
+                results = evaluate_expr(input_str)
+
             if results is not None and len([r for r in results if r is not None]) > 0:
                 print("\n".join([str(r) for r in results if r is not None]))
         except NameError as e:
