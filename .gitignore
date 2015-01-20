@@ -10,3 +10,5 @@ __pycache__
 lextab.py
 Session.vim
 .coverage
+clean.sh
+yaccdebug
