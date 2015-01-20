@@ -2,7 +2,6 @@
 
 # vim: ts=4 sts=4 et sw=4
 
-from .version import __prompt__
 from .lexer import tokens, column
 
 # Operator associativity and precedence rules

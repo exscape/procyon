@@ -7,18 +7,14 @@ import sys
 import re
 import codecs
 from ply import lex, yacc
-from .version import __version__, __date__, __debugparse__
-import excalc.lexer as lexer
-import excalc.parser as parser
+from .common import *  # VERSION, DATE and exceptions, mostly
+import procyon.lexer as lexer
+import procyon.parser as parser
 
 __all__ = ['evaluate', 'evaluate_command']
 
 # A scope is written as a tuple, (parent_scope, {'name': val, 'name2': val2, ...})
 # The global scope has None as its parent.
-
-class ReturnException(Exception):
-    """ Thrown when a function returns, with its return value as the exception value. """
-    pass
 
 def decode_escapes(s):
     r""" Handle escape sequences in strings.
@@ -147,9 +143,9 @@ def evaluate(s, clear_state=False):
 
     lex_lexer = lex.lex(module=lexer, debug=False, optimize=False)
     yacc_parser = yacc.yacc(module=parser, debug=True, start="toplevel")
-    parse_tree = yacc_parser.parse(s, lexer=lex_lexer, debug=__debugparse__)
+    parse_tree = yacc_parser.parse(s, lexer=lex_lexer, debug=DEBUGPARSE)
 
-    if __debugparse__:
+    if DEBUGPARSE:
         print('ENTIRE TREE:', parse_tree)
 
     if clear_state:
@@ -413,7 +409,7 @@ def evaluate_command(cmd_name):
         for var in sorted(vars):
             print("{}:\t{}".format(var, __global_scope[1][var]))
     elif cmd_name == 'help':  # ignore coverage
-        print("# exCalc v" + __version__ + ", " + __date__)
+        print("# procyon v" + VERSION + ", " + DATE)
         print("# Supported operators: + - * / ^ ( ) = == != < > >= <= && ||")
         print("# Comments begin with a hash sign, as these lines do.")
         print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
@@ -432,6 +428,6 @@ def evaluate_command(cmd_name):
         print("# " + ", ".join(sorted(__initial_state)))
         print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
         print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
-        print("# See excalc-repl.py for more information.")
+        print("# See procyon-repl.py for more information.")
     else:
         raise NameError("unknown command {}".format(cmd_name))

@@ -23,7 +23,6 @@
 # * # begins a comment (until end-of-line)
 
 ### HIGH PRIORITY TODO ITEMS:
-# TODO: new name!
 # TODO: update comment block above when new name is in place
 # TODO: start using custom exception classes, as interpreter bugs are caught by accident now
 # TODO: elseif
@@ -40,8 +39,8 @@
 # TODO: test ^ error pointing with comments
 # TODO: fix ^ pointing with tab indentation
 
-from excalc import evaluate, evaluate_command
-from excalc.version import __version__, __date__, __prompt__
+from procyon import evaluate, evaluate_command
+from procyon.common import VERSION, DATE, PROMPT
 
 import sys
 import readline
@@ -52,11 +51,13 @@ def print_error_pos(e):
     if m:
         (line, pos) = (int(m.group(1)), int(m.group(2)))
         assert line == 1
-        print(" " * (pos - 1 + len(__prompt__)) + "^")
+        print(" " * (pos - 1 + len(PROMPT)) + "^")
+
+print("# procyon interpreter v" + VERSION + ", " + DATE)
 
 while True:
     try:
-        input_str = input(__prompt__).strip()
+        input_str = input(PROMPT).strip()
         try:
             if len(input_str) > 0 and input_str[0] == '.':
                 if len(input_str.split()) > 1:

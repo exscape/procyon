@@ -2,8 +2,6 @@
 
 # vim: ts=4 sts=4 et sw=4
 
-from .version import __prompt__
-
 keywords = ('if', 'else', 'func', 'return')
 
 tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals

@@ -4,7 +4,7 @@ branch = True
 [report]
 exclude_lines =
 	ignore coverage
-	if __debugparse__
+	if DEBUGPARSE
 	raise RuntimeError
 
 show_missing = True

@@ -4,8 +4,8 @@ import os
 import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-from excalc import evaluate
-from excalc import evaluate_command
+from procyon import evaluate
+from procyon import evaluate_command
 
 def ev(*args):
     """ Evaluate a string with a fresh global state.

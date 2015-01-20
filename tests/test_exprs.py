@@ -4,6 +4,7 @@
 
 import pytest
 from tests_common import ev, ev_reuse_state, ev_command
+from procyon.common import *  # Mostly exceptions
 
 def test_empty():
     assert ev("") is None

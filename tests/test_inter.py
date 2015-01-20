@@ -4,6 +4,7 @@
 
 import pytest
 from tests_common import ev, ev_reuse_state
+from procyon.common import *  # Mostly exceptions
 
 #
 # Test functions
