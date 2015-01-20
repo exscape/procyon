@@ -43,7 +43,7 @@ print("number of loops:", loops);
 
 try:
     res = evaluate(program)
-    #print("return from evaluate:", res)
+    # print("return from evaluate:", res)
 except SyntaxError as e:
     m = re.search('input position (\d+):(\d+)$', str(e))
     if m:
@@ -55,9 +55,15 @@ except SyntaxError as e:
     print("Syntax error: {}".format(str(e)))
 except RuntimeError as e:
     print(str(e))
+    sys.exit(1)
+except NameError as e:
+    print("Name error: {}".format(str(e)))
+except OverflowError:
+    print("Overflow: result is out of range")
+except TypeError as e:
+    print("Type error: {}".format(str(e)))
 
 ### HIGH PRIORITY TODO ITEMS:
-# TODO: Look through all exceptions and change them (esp. SyntaxError) for more fitting ones
 # TODO: Write tests that use functions, if statements, scoping and more
 # TODO: Verify test coverage with cov
 
@@ -66,4 +72,3 @@ except RuntimeError as e:
 ### TODO: Support reading programs from files (via sys.argv to this program)
 ### TODO: test ^ error pointing with comments
 ### TODO: fix ^ pointing with tab indentation
-### TODO: catch all possible exceptions in the interpreter

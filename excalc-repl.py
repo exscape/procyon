@@ -23,13 +23,9 @@
 # * # begins a comment (until end-of-line)
 
 # TODO: update comment block above when statements are in
-# TODO: refactor to better Python style
-# TODO: if/else, return (?) -- allowing e.g. recursive factorial to be defined
 # TODO: elseif
 # TODO: remember to add the above to the .help listing
 
-# TODO: proper scoping of variables
-# TODO: test and/or support nested functions
 # TODO: types
 # TODO: tests for if/else, functions, strings and so on!
 
@@ -58,8 +54,8 @@ while True:
             results = evaluate_expr(input_str)
             if results is not None and len([r for r in results if r is not None]) > 0:
                 print("\n".join([str(r) for r in results if r is not None]))
-        except KeyError as e:
-            print("Error: {}".format(str(e)[1:-1]))
+        except NameError as e:
+            print("Name error: {}".format(str(e)))
         except OverflowError:
             print("Overflow: result is out of range")
         except SyntaxError as e:

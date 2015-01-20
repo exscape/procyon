@@ -34,7 +34,7 @@ def _var_exists(scope, var):
     """ Test if a variable exists in a given scope, or any parent/grandparent scope. """
     try:
         _read_var(scope, var)
-    except KeyError:
+    except NameError:
         return False
 
     return True
@@ -58,7 +58,7 @@ def _read_var(scope, var):
             return _read_var(scope[0], var)
         else:
             # There is no parent scope, and we still haven't found it. Give up.
-            raise KeyError('Unknown variable name \"{}\"'.format(var))
+            raise NameError('unknown identifier \"{}\"'.format(var))
 
 def _assign_var(scope, var, value):
     """ Set a variable in a given scope. Returns the value that was assigned.
@@ -264,18 +264,18 @@ def __evaluate_tree(tree, scope):
     elif kind == "ident":
         name = tree[1]
         if name in __functions:
-            raise SyntaxError("can't use built-in function \"{}\" as a variable".format(name))
+            raise TypeError("can't use built-in function \"{}\" as a variable".format(name))
 
         try:
             return _read_var(scope, name)
         except KeyError:
-            raise KeyError('unknown variable name "{}"'.format(name))
+            raise NameError('unknown identifier "{}"'.format(name))
 
     elif kind == "assign":
         name = tree[1][1]
 
         if name in __functions:
-            raise KeyError('cannot assign to built-in function "{}"'.format(name))
+            raise TypeError('cannot assign to built-in function "{}"'.format(name))
 
         val = tree[2]
         return _assign_var(scope, name, __evaluate_tree(val, scope))
@@ -285,19 +285,17 @@ def __evaluate_tree(tree, scope):
         args = tree[2]
 
         if func_name not in __functions and not _var_exists(scope, func_name):
-            # TODO: Should probably not be SyntaxError
-            raise SyntaxError('unknown function "{}"'.format(func_name))
+            raise NameError('unknown function "{}"'.format(func_name))
 
         # OK, so it exists either as a built-in (__functions) or a user-defined function.
         # Check if it's user-defined, first:
 
         if _var_exists(scope, func_name):
             f = _read_var(scope, func_name)
-            if f[0] == "func":
+            if type(f) is tuple and f[0] == "func":
                 return __evaluate_function(f, args, scope)
             else:
-                # TODO: Should probably not be SyntaxError
-                raise SyntaxError('Attempt to call non-function {}'.format(func_name))
+                raise TypeError('attempted to call non-function "{}"'.format(func_name))
 
         assert not _var_exists(scope, func_name)
         assert func_name in __functions
@@ -306,7 +304,7 @@ def __evaluate_tree(tree, scope):
         # either from math, or a built-in (abs, round, print and possibly others).
 
         if __functions[func_name] > 0 and len(args) != __functions[func_name]:
-            raise SyntaxError('{} requires exactly {} arguments, {} provided'.format(
+            raise TypeError('{} requires exactly {} arguments, {} provided'.format(
                 func_name, __functions[func_name], len(args)))
 
         args = [__evaluate_tree(arg, scope) for arg in args]
@@ -355,7 +353,7 @@ def __evaluate_tree(tree, scope):
             print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
             print("# See excalc-repl.py for more information.")
         else:
-            raise SyntaxError("Unknown command {}".format(cmd_name))
+            raise NameError("unknown command {}".format(cmd_name))
 
         return None
 
@@ -396,9 +394,8 @@ def __evaluate_function(func, args, scope):
     body = func[2]
 
     if len(args) != len(params):
-        # TODO: Should probably not be SyntaxError
-        raise SyntaxError('Attempted to call {}() with {} arguments, exactly {} required'.format(
-            name, len(args), len(params)))
+        raise TypeError('attempted to call {}() with {} argument{}, exactly {} required'.format(
+            "s" if len(args) == 1 else "", name, len(args), len(params)))
 
     # Evaluate arguments in the *calling* scope!
     args = [__evaluate_tree(a, scope) for a in args]
