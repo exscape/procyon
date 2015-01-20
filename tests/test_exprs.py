@@ -3,14 +3,14 @@
 # vim: ts=4 sts=4 et sw=4
 
 import pytest
-from excalc import evaluate as ev
+from tests_common import ev, ev_reuse_state, ev_command
 
 def test_empty():
     assert ev("") is None
 
 def test_single():
     assert ev("1") == [1]
-    assert ev("_") == [1]
+    assert ev_reuse_state("_") == [1]
 
 def test_addition():
     assert ev("1+1") == [2]
@@ -133,56 +133,68 @@ def test_comparisons_3():
     assert ev("!!2^4 >= 0 > -(2^3) == -8") == [1]
     assert ev("((34 == 30 + 4) == 1) == 0") == [0]
 
-def test_syntax_error_1():
+def test_exceptions_1():
     with pytest.raises(SyntaxError):
-        ev("1+3+(4))")
+        # Multiline to test a code path in the lexer.
+        # (Though the test doesn't really do anything useful in that regard...)
+        ev("""
+        1+3+(4))
+        """)
 
-def test_syntax_error_2():
+def test_exceptions_2():
     with pytest.raises(SyntaxError):
         ev("1+(3+(4)")
 
-def test_syntax_error_3():
-    with pytest.raises(SyntaxError):
+def test_exceptions_3():
+    with pytest.raises(TypeError):
         ev("sin")
 
-def test_syntax_error_4():
-    with pytest.raises(SyntaxError):
+def test_exceptions_4():
+    with pytest.raises(TypeError):
         ev("cos()")
 
-def test_syntax_error_5():
-    with pytest.raises(SyntaxError):
+def test_exceptions_5():
+    with pytest.raises(TypeError):
         ev("cos(3, 2)")
 
-def test_syntax_error_6():
+def test_exceptions_6():
     with pytest.raises(SyntaxError):
         ev("2^3!")
 
-def test_syntax_error_7():
+def test_exceptions_7():
     with pytest.raises(SyntaxError):
         ev("10 + 3 + 5%")
 
-def test_syntax_error_8():
+def test_exceptions_8():
     with pytest.raises(SyntaxError):
         ev(".hello")
 
-def test_syntax_error_9():
+def test_exceptions_9():
     with pytest.raises(SyntaxError):
         ev("sin(1) = 3")
 
-def test_syntax_error_10():
+def test_exceptions_10():
     with pytest.raises(SyntaxError):
         ev("10 + 1; 3 * (3; 2)")
 
-def test_syntax_error_10():
+def test_exceptions_11():
     with pytest.raises(SyntaxError):
         ev("(4 + 1; 1 && 3)")
 
-def test_keyerror_1():
-    with pytest.raises(KeyError):
+def test_exceptions_12():
+    with pytest.raises(NameError):
+        ev_command(".hello")
+
+def test_exceptions_13():
+    with pytest.raises(TypeError):
+        ev("num = 10; num(123)")
+
+def test_nameerror_1():
+    with pytest.raises(NameError):
         ev("5 + abc")
 
-def test_keyerror_2():
-    with pytest.raises(KeyError):
+def test_nameerror_2():
+    with pytest.raises(TypeError):
         ev("sin = 40")
 
 def test_not():
@@ -242,9 +254,9 @@ def test_and_or_3():
     assert ev("a=5;b=10;c=15;a+b == c && a == c-b && (a+b+c == 15 || a+b == 15)") == [5, 10, 15, 1]
     assert ev("sin(0) || cos(0)") == [1]
     assert ev("0 && 1; 10.1 < 12 < 44 && (1 > 2 || 3)") == [0, 1]
-    with pytest.raises(KeyError):
+    with pytest.raises(NameError):
         ev("0 && (xyz = sin(1)); xyz")
-    with pytest.raises(KeyError):
+    with pytest.raises(NameError):
         ev("xyz + 1")
 
 # After spending two days getting this right,
@@ -283,11 +295,11 @@ def test_comp_and_or_3():
 
 def test_variables():
     assert ev("a = 5") == [5]
-    assert ev("a == 5") == [1]
-    assert ev("a^3 - 10^2") == [25]
-    assert ev("_") == [25]
-    assert ev("b = (_ - 5)^2") == [400]
-    assert ev("b") == [400]
+    assert ev_reuse_state("a == 5") == [1]
+    assert ev_reuse_state("a^3 - 10^2") == [25]
+    assert ev_reuse_state("_") == [25]
+    assert ev_reuse_state("b = (_ - 5)^2") == [400]
+    assert ev_reuse_state("b") == [400]
 
 def test_builtin_functions():
     assert ev("log10(100)") == [2]
@@ -298,11 +310,9 @@ def test_builtin_functions():
     assert ev("round(123.456, 0)") == [123]
     assert ev("round(123456, -3)") == [123000]
 
-    with pytest.raises(SyntaxError):
+    with pytest.raises(NameError):
         ev("blah(123)")
 
 def test_misc():
     assert ev("log10(10^3)^3 + 3 * 3^3") == [108]
     assert ev("(( (1-3)^2 - 5) + log2(128) - 1)") == [5]
-
-# TODO: test short-circuit evaluation, when possible without ugly hacks etc.
