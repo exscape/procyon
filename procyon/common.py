@@ -2,7 +2,7 @@
 
 # Minor stuff that is shared by various modules is stored here.
 
-VERSION = '0.13a'
+VERSION = '0.14a'
 DATE = '2015-01-20'
 PROMPT = '>>> '
 DEBUGPARSE = 0

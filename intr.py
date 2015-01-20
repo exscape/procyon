@@ -2,7 +2,7 @@
 
 # vim: ts=4 sts=4 et sw=4
 
-# See procyon-repl.py for information and such.
+# See README.md for information and such.
 
 from procyon import evaluate
 from procyon.common import PROMPT

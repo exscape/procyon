@@ -409,7 +409,7 @@ def evaluate_command(cmd_name):
         for var in sorted(vars):
             print("{}:\t{}".format(var, __global_scope[1][var]))
     elif cmd_name == 'help':  # ignore coverage
-        print("# procyon v" + VERSION + ", " + DATE)
+        print("# Procyon v" + VERSION + ", " + DATE)
         print("# Supported operators: + - * / ^ ( ) = == != < > >= <= && ||")
         print("# Comments begin with a hash sign, as these lines do.")
         print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
@@ -428,6 +428,6 @@ def evaluate_command(cmd_name):
         print("# " + ", ".join(sorted(__initial_state)))
         print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
         print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
-        print("# See procyon-repl.py for more information.")
+        print("# See README.md for more information.")
     else:
         raise NameError("unknown command {}".format(cmd_name))

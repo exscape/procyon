@@ -2,40 +2,25 @@
 
 # vim: ts=4 sts=4 et sw=4
 
-# Simple calculator; written for Python 3 (3.4.2).
-# Thomas Backman (serenity@exscape.org), 2015-01-14 - 2015-01-20
-
-# Features:
-# * Readline support for history and input editing
-# * Uses integer math where possible (for exact results)
-# * Support for input of hexadecimal/octal/binary numbers (not output, though)
-# * Integer sizes limited by amount of RAM only (floats are *not* arbitrary precision)
-# * Proper order of operations
-# * Built-in constants: e, pi
-# * Supports variables
-# * Chained comparisons: a > b > c works as in mathematics; things like a > b >= c == d also works
-#   These are treated as (a > b) && (b > c), and (a > b) && (b > c) && (c == d), respectively.
-# * On the other hand, c == (a > b) means to test a > b first; c is then tested against that 0 or 1
-# * .help command
-# * .vars command shows the value of all variables (except unchanged built-ins)
-# * Supports built-in functions (sqrt, sin, cos, tan and so on, see .help for a complete list)
-# * Value of last evaluation is accessible as _
-# * # begins a comment (until end-of-line)
+# See README.md for information and such.
 
 ### HIGH PRIORITY TODO ITEMS:
-# TODO: update comment block above when new name is in place
 # TODO: start using custom exception classes, as interpreter bugs are caught by accident now
 # TODO: elseif
 
 ### Lower priority:
+# TODO: function definitions can shadow built-ins; is that desirable or a bug?
+# TODO: REPL: multi-line statements; "import"-ish functionality for loading code
+# TODO: resolve shift-reduce conflicts for the comparison operators (PLY parses it as intended,
+#       but it does warn)
 # TODO: loops! for, while? do while?
 # TODO: lists! Or "arrays"? Perhaps after static typing?
-# TODO: types
+# TODO: types?
 # TODO: inline if-statements (and unless) -- ternary can NOT use if/else syntax,
 #       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or
 #       return "x if y else z". Might be easy to parse, but it doesn't look great either way.
 
-# TODO: support reading programs from files (via sys.argv to this program)
+# TODO: support reading programs from files (via sys.argv to intr.py)
 # TODO: test ^ error pointing with comments
 # TODO: fix ^ pointing with tab indentation
 
@@ -53,7 +38,7 @@ def print_error_pos(e):
         assert line == 1
         print(" " * (pos - 1 + len(PROMPT)) + "^")
 
-print("# procyon interpreter v" + VERSION + ", " + DATE)
+print("Procyon interpreter v" + VERSION + ", " + DATE)
 
 while True:
     try:
