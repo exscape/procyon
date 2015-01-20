@@ -13,20 +13,12 @@ import excalc.parser as parser
 
 __all__ = ['evaluate', 'evaluate_command']
 
-# assign needs to write to the correct env
-# ident needs to read from it
-# func / __evaluate_function needs to create new env for passed arguments
-
-# TODO: rewrite comments as docstrings
-# TODO: get rid of a few underscores; look at conventions and consider __all__
-
 # A scope is written as a tuple, (parent_scope, {'name': val, 'name2': val2, ...})
 # The global scope has None as its parent.
 
 class ReturnException(Exception):
     """ Thrown when a function returns, with its return value as the exception value. """
     pass
-
 
 def decode_escapes(s):
     r""" Handle escape sequences in strings.
@@ -113,15 +105,13 @@ def _assign_var(scope, var, value):
 
 def _scope_of_var(var, scope):
     """ Return the closest scope that contains the given variable, if any. """
-    if scope is None:
-        return None
 
     if var in scope[1]:
         # If we have this var, just return ourselves.
         return scope
     elif scope[0] is not None:
         return _scope_of_var(var, scope[0])
-    else:
+    else:  # ignore coverage
         return None
 
 # def _print_all_vars(scope):
@@ -165,16 +155,14 @@ def evaluate(s, clear_state=False):
     if clear_state:
         _init_global_state()
 
-    return __evaluate_all(parse_tree, __global_scope)
+    return _evaluate_all(parse_tree, __global_scope)
 
-def __evaluate_all(trees, scope):
+def _evaluate_all(trees, scope):
     """ Evaluate a full set of statements and return a list of results. """
 
     results = []
     for tree in trees:
-        if len(tree) == 0:
-            continue
-        result = __evaluate_tree(tree, scope)
+        result = _evaluate_tree(tree, scope)
         results.append(result)
         if result is not None:
             # TODO: How should _ work? One per scope? Global only?
@@ -183,15 +171,15 @@ def __evaluate_all(trees, scope):
 
     return results
 
-def __evaluate_tree(tree, scope):
+def _evaluate_tree(tree, scope):
     """ Recursively evaluate a parse tree and return the result. """
 
     kind = tree[0]
 
     if kind == "binop":
         (left_child, op, right_child) = tree[1:]
-        left = __evaluate_tree(left_child, scope)
-        right = __evaluate_tree(right_child, scope)
+        left = _evaluate_tree(left_child, scope)
+        right = _evaluate_tree(right_child, scope)
 
         if type(left) != type(right) and not (
                 type(left) in (int, float) and type(right) in (int, float)):
@@ -221,7 +209,7 @@ def __evaluate_tree(tree, scope):
 
         (left_child, op, right_child) = tree[1:]
 
-        left = __evaluate_tree(left_child, scope)
+        left = _evaluate_tree(left_child, scope)
 
         # Test if we can short-circuit
         if op == '||' and left:
@@ -230,7 +218,7 @@ def __evaluate_tree(tree, scope):
             return 0
 
         # We couldn't, so we must evaluate the right side also
-        right = __evaluate_tree(right_child, scope)
+        right = _evaluate_tree(right_child, scope)
 
         # If this is an AND operation, we know the left side is true already,
         # so if the right side is true, we return 1.
@@ -253,8 +241,8 @@ def __evaluate_tree(tree, scope):
                 yield l[i:i+3]
 
         def comp_one(left, op, right):
-            left = __evaluate_tree(left, scope)
-            right = __evaluate_tree(right, scope)
+            left = _evaluate_tree(left, scope)
+            right = _evaluate_tree(right, scope)
             if op == '==':
                 return int(left == right)
             elif op == '!=':
@@ -267,6 +255,8 @@ def __evaluate_tree(tree, scope):
                 return int(left <= right)
             elif op == '>=':
                 return int(left >= right)
+            else:
+                raise RuntimeError("BUG: unknown operator in comp_one")
 
         comparisons = tree[1]
 
@@ -276,10 +266,10 @@ def __evaluate_tree(tree, scope):
         return int(all(comp_one(*c) for c in chunk(comparisons)))
 
     elif kind == "uminus":
-        return -__evaluate_tree(tree[1], scope)
+        return -_evaluate_tree(tree[1], scope)
 
     elif kind == "not":
-        return int(not __evaluate_tree(tree[1], scope))
+        return int(not _evaluate_tree(tree[1], scope))
 
     elif kind == "ident":
         name = tree[1]
@@ -298,7 +288,7 @@ def __evaluate_tree(tree, scope):
             raise TypeError('cannot assign to built-in function "{}"'.format(name))
 
         val = tree[2]
-        return _assign_var(scope, name, __evaluate_tree(val, scope))
+        return _assign_var(scope, name, _evaluate_tree(val, scope))
 
     elif kind == "call":
         func_name = tree[1][1]
@@ -313,7 +303,7 @@ def __evaluate_tree(tree, scope):
         if _var_exists(scope, func_name):
             f = _read_var(scope, func_name)
             if type(f) is tuple and f[0] == "func":
-                return __evaluate_function(f, args, scope)
+                return _evaluate_function(f, args, scope)
             else:
                 raise TypeError('attempted to call non-function "{}"'.format(func_name))
 
@@ -327,7 +317,7 @@ def __evaluate_tree(tree, scope):
             raise TypeError('{} requires exactly {} arguments, {} provided'.format(
                 func_name, __functions[func_name], len(args)))
 
-        args = [__evaluate_tree(arg, scope) for arg in args]
+        args = [_evaluate_tree(arg, scope) for arg in args]
 
         func = None
         try:
@@ -348,10 +338,10 @@ def __evaluate_tree(tree, scope):
     elif kind == "if":
         new_scope = _new_scope(scope, [], [])
         (cond, then_body, else_body) = tree[1:]
-        if __evaluate_tree(cond, scope):  # Use the old scope here!
-            return __evaluate_all(then_body, new_scope)
+        if _evaluate_tree(cond, scope):  # Use the old scope here!
+            return _evaluate_all(then_body, new_scope)
         elif else_body:
-            return __evaluate_all(else_body, new_scope)
+            return _evaluate_all(else_body, new_scope)
 
     elif kind == "func":
         # We ran across a function definition. Bind its set of statements etc. to
@@ -366,12 +356,12 @@ def __evaluate_tree(tree, scope):
 
     elif kind == "return":
         if tree[1] is not None:
-            val = __evaluate_tree(tree[1], scope)
+            val = _evaluate_tree(tree[1], scope)
             raise ReturnException(val)
         else:
             raise ReturnException(None)
 
-    raise RuntimeError('BUG: reached end of __evaluate_tree! kind={}, tree: {}'.format(kind, tree))
+    raise RuntimeError('BUG: reached end of _evaluate_tree! kind={}, tree: {}'.format(kind, tree))
 
 # Executes a user-defined function
 # Note: "args" refers to the arguments the function is passed,
@@ -380,7 +370,7 @@ def __evaluate_tree(tree, scope):
 # func sqrt(x) { return x^(1/2); }
 # sqrt(2);
 # params is ["x"], while args is [2]
-def __evaluate_function(func, args, scope):
+def _evaluate_function(func, args, scope):
     name = func[1]
     params = [p[1] for p in func[2]]
     body = func[3]
@@ -390,7 +380,7 @@ def __evaluate_function(func, args, scope):
             "s" if len(args) == 1 else "", name, len(args), len(params)))
 
     # Evaluate arguments in the *calling* scope!
-    args = [__evaluate_tree(a, scope) for a in args]
+    args = [_evaluate_tree(a, scope) for a in args]
 
     # print("...(", end="")
     # for i in range(len(args)):
@@ -400,7 +390,7 @@ def __evaluate_function(func, args, scope):
     func_scope = _new_scope(scope, params, args)
 
     try:
-        __evaluate_all(body, func_scope)
+        _evaluate_all(body, func_scope)
     except ReturnException as ret:
         return ret.args[0]
 
@@ -411,7 +401,7 @@ def evaluate_command(cmd_name):
         intended as minor helpers for interactive use.
     """
 
-    if cmd_name == 'vars':
+    if cmd_name == 'vars':  # ignore coverage
         # Bit of a mess... Fetch each variable name.
         # Ignore _, and ignore pre-defined constants (e.g. e, pi)
         # *UNLESS* the user has assigned other values to those names.
@@ -423,7 +413,7 @@ def evaluate_command(cmd_name):
 
         for var in sorted(vars):
             print("{}:\t{}".format(var, __global_scope[1][var]))
-    elif cmd_name == 'help':
+    elif cmd_name == 'help':  # ignore coverage
         print("# exCalc v" + __version__ + ", " + __date__)
         print("# Supported operators: + - * / ^ ( ) = == != < > >= <= && ||")
         print("# Comments begin with a hash sign, as these lines do.")

@@ -1,0 +1,10 @@
+[run]
+branch = True
+
+[report]
+exclude_lines =
+	ignore coverage
+	if __debugparse__
+	raise RuntimeError
+
+show_missing = True

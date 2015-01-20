@@ -12,3 +12,5 @@ Session.vim
 .coverage
 clean.sh
 yaccdebug
+.cache
+htmlcov

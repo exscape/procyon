@@ -27,7 +27,6 @@
 # TODO: remember to add the above to the .help listing
 
 # TODO: types
-# TODO: tests for if/else, functions, strings and so on!
 
 # TODO: inline if-statements (and unless) -- ternary can NOT use if/else syntax,
 #       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or

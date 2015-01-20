@@ -249,7 +249,7 @@ def test_scoping_fail_1():
 def test_scoping_fail_2():
     prog = """
     func test(x, y) {
-        if (x > y) {
+        if (x >= y) {
             z = x*y;
         }
         else {

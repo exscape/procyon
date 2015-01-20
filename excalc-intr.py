@@ -64,8 +64,6 @@ except TypeError as e:
     print("Type error: {}".format(str(e)))
 
 ### HIGH PRIORITY TODO ITEMS:
-# TODO: Write tests that use functions, if statements, scoping and more
-# TODO: Verify test coverage with cov
 # TODO: Start using custom exception classes, as interpreter bugs are caught by accident now
 
 ### Lower priority:
