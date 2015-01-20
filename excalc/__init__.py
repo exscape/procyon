@@ -1,5 +1,4 @@
-from .interpreter import evaluate
-
 # vim: ts=4 sts=4 et sw=4
 
-__all__ = ['evaluate', 'evaluate_expr']
+from .interpreter import evaluate, evaluate_command
+__all__ = ['evaluate', 'evaluate_command']

@@ -9,7 +9,7 @@ from .version import __version__, __date__, __debugparse__
 import excalc.lexer as lexer
 import excalc.parser as parser
 
-__all__ = ['evaluate', 'evaluate_expr', 'evaluate_command']
+__all__ = ['evaluate', 'evaluate_command']
 
 # assign needs to write to the correct env
 # ident needs to read from it
@@ -116,21 +116,6 @@ __functions = {'sin': 1, 'cos': 1, 'tan': 1,
 # Built-in constants; there are overwritable by design
 __initial_state = {'e': math.e, 'pi': math.pi}
 __global_scope = (None, __initial_state.copy())
-
-def evaluate_expr(expr):
-    """ Evaluates an expression (as a string) and lexes/parses it, then returns the result"""
-
-    if len(expr.rstrip()) == 0:
-        return None
-
-    lex_lexer = lex.lex(module=lexer, debug=False, optimize=False)
-    yacc_parser = yacc.yacc(module=parser, debug=True, start="toplevel", debugfile="yaccdebug")
-    parse_tree = yacc_parser.parse(expr, lexer=lex_lexer, debug=__debugparse__)
-
-    if __debugparse__:
-        print('ENTIRE TREE:', parse_tree)
-
-    return __evaluate_all(parse_tree, __global_scope)
 
 def evaluate(s):
     """ Evaluate an entire program, in the form of a string. """

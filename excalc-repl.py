@@ -3,7 +3,7 @@
 # vim: ts=4 sts=4 et sw=4
 
 # Simple calculator; written for Python 3 (3.4.2).
-# Thomas Backman (serenity@exscape.org), 2015-01-14 - 2015-01-19
+# Thomas Backman (serenity@exscape.org), 2015-01-14 - 2015-01-20
 
 # Features:
 # * Readline support for history and input editing
@@ -33,7 +33,7 @@
 #       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or
 #       return "x if y else z". Might be easy to parse, but it doesn't look great either way.
 
-from excalc.interpreter import evaluate, evaluate_expr, evaluate_command
+from excalc import evaluate, evaluate_command
 from excalc.version import __version__, __date__, __prompt__
 
 import sys
@@ -58,7 +58,7 @@ while True:
                     evaluate_command(input_str[1:])
                 continue
             else:
-                results = evaluate_expr(input_str)
+                results = evaluate(input_str)
 
             if results is not None and len([r for r in results if r is not None]) > 0:
                 print("\n".join([str(r) for r in results if r is not None]))

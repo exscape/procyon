@@ -4,7 +4,7 @@
 
 # See excalc-repl.py for information and such.
 
-from excalc.interpreter import evaluate, evaluate_expr
+from excalc import evaluate
 from excalc.version import __version__, __date__, __prompt__
 
 import sys
