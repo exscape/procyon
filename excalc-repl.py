@@ -22,15 +22,23 @@
 # * Value of last evaluation is accessible as _
 # * # begins a comment (until end-of-line)
 
-# TODO: update comment block above when statements are in
+### HIGH PRIORITY TODO ITEMS:
+# TODO: new name!
+# TODO: update comment block above when new name is in place
+# TODO: start using custom exception classes, as interpreter bugs are caught by accident now
 # TODO: elseif
-# TODO: remember to add the above to the .help listing
 
+### Lower priority:
+# TODO: loops! for, while? do while?
+# TODO: lists! Or "arrays"? Perhaps after static typing?
 # TODO: types
-
 # TODO: inline if-statements (and unless) -- ternary can NOT use if/else syntax,
 #       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or
 #       return "x if y else z". Might be easy to parse, but it doesn't look great either way.
+
+# TODO: support reading programs from files (via sys.argv to this program)
+# TODO: test ^ error pointing with comments
+# TODO: fix ^ pointing with tab indentation
 
 from excalc import evaluate, evaluate_command
 from excalc.version import __version__, __date__, __prompt__

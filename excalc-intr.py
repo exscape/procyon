@@ -62,15 +62,3 @@ except OverflowError:
     print("Overflow: result is out of range")
 except TypeError as e:
     print("Type error: {}".format(str(e)))
-
-### HIGH PRIORITY TODO ITEMS:
-# TODO: Start using custom exception classes, as interpreter bugs are caught by accident now
-
-### Lower priority:
-
-# TODO: loops! for, while? do while?
-# TODO: lists! Or "arrays"? Perhaps after static typing?
-
-### TODO: Support reading programs from files (via sys.argv to this program)
-### TODO: test ^ error pointing with comments
-### TODO: fix ^ pointing with tab indentation

@@ -189,7 +189,6 @@ def _evaluate_tree(tree, scope):
         if type(left) is str and type(right) is str and op != '+':
             raise TypeError("operator {} is not defined on strings".format(op))
 
-        # TODO: static typing
         if op == '+':
             return left + right
         elif op == '-':
