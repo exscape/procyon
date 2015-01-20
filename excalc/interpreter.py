@@ -4,6 +4,8 @@
 
 import math
 import sys
+import re
+import codecs
 from ply import lex, yacc
 from .version import __version__, __date__, __debugparse__
 import excalc.lexer as lexer
@@ -24,6 +26,32 @@ __all__ = ['evaluate', 'evaluate_command']
 class ReturnException(Exception):
     """ Thrown when a function returns, with its return value as the exception value. """
     pass
+
+
+def decode_escapes(s):
+    r""" Handle escape sequences in strings.
+
+         On a basic level, this allows for \n to mean newline and so on, but
+         it does encompass more.
+         Code from: http://stackoverflow.com/a/24519338/1668576
+    """
+
+    if type(s) is not str:
+        return s
+
+    ESCAPE_SEQUENCE_RE = re.compile(r'''
+        ( \\U........      # 8-digit hex escapes
+        | \\u....          # 4-digit hex escapes
+        | \\x..            # 2-digit hex escapes
+        | \\[0-7]{1,3}     # Octal escapes
+        | \\N\{[^}]+\}     # Unicode characters by name
+        | \\[\\'"abfnrtv]  # Single-character escapes
+        )''', re.UNICODE | re.VERBOSE)
+
+    def decode_match(match):
+        return codecs.decode(match.group(0), 'unicode-escape')
+
+    return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
 
 def _new_scope(cur_scope, vars, values):
     """ Create a new scope, for e.g. a function or if statement. """
@@ -96,13 +124,13 @@ def _scope_of_var(var, scope):
     else:
         return None
 
-def _print_all_vars(scope):
-    """ Print all variables in all scopes; first this one, then the parent, etc. """
-    for k, v in scope[1].items():
-        print("{}: {}".format(k, v))
-
-    if scope[0] is not None:
-        _print_all_vars(scope[0])
+# def _print_all_vars(scope):
+#     """ Print all variables in all scopes; first this one, then the parent, etc. """
+#     for k, v in scope[1].items():
+#         print("{}: {}".format(k, v))
+#
+#     if scope[0] is not None:
+#         _print_all_vars(scope[0])
 
 # Built-in functions and number of arguments
 __functions = {'sin': 1, 'cos': 1, 'tan': 1,
@@ -113,11 +141,15 @@ __functions = {'sin': 1, 'cos': 1, 'tan': 1,
                'abs': 1, 'sqrt': 1, 'ceil': 1, 'floor': 1,
                'trunc': 1, 'round': 2, 'print': -1}
 
+def _init_global_state():
+    global __global_scope
+    __global_scope = (None, __initial_state.copy())
+
 # Built-in constants; there are overwritable by design
 __initial_state = {'e': math.e, 'pi': math.pi}
-__global_scope = (None, __initial_state.copy())
+_init_global_state()
 
-def evaluate(s):
+def evaluate(s, clear_state=False):
     """ Evaluate an entire program, in the form of a string. """
 
     if len(s.rstrip()) == 0:
@@ -129,6 +161,9 @@ def evaluate(s):
 
     if __debugparse__:
         print('ENTIRE TREE:', parse_tree)
+
+    if clear_state:
+        _init_global_state()
 
     return __evaluate_all(parse_tree, __global_scope)
 
@@ -215,7 +250,7 @@ def __evaluate_tree(tree, scope):
         # except it uses Python generators
         def chunk(l):
             for i in range(0, len(l) - 1, 2):
-                yield l[i : i+3]
+                yield l[i:i+3]
 
         def comp_one(left, op, right):
             left = __evaluate_tree(left, scope)
@@ -253,7 +288,7 @@ def __evaluate_tree(tree, scope):
 
         try:
             return _read_var(scope, name)
-        except KeyError:
+        except NameError:
             raise NameError('unknown identifier "{}"'.format(name))
 
     elif kind == "assign":
@@ -300,7 +335,15 @@ def __evaluate_tree(tree, scope):
         except AttributeError:
             func = getattr(sys.modules['builtins'], func_name)
 
-        return func(*args)
+        if func == print:
+            # Backslashes need some help. The string "Hello\\ \n" is printed
+            # verbatim (followed by the newline print inserts), instead of
+            # having a backslash, a space, and a blank line (itself ended by
+            # another newline).
+            print(*[decode_escapes(a) for a in args])
+            return None
+        else:
+            return func(*args)
 
     elif kind == "if":
         new_scope = _new_scope(scope, [], [])
@@ -317,13 +360,16 @@ def __evaluate_tree(tree, scope):
         name = tree[1][1]
         (params, body) = tree[2:]
 
-        _assign_var(scope, name, ("func", params, body))
+        _assign_var(scope, name, ("func", name, params, body))
 
         return None
 
     elif kind == "return":
-        val = __evaluate_tree(tree[1], scope)
-        raise ReturnException(val)
+        if tree[1] is not None:
+            val = __evaluate_tree(tree[1], scope)
+            raise ReturnException(val)
+        else:
+            raise ReturnException(None)
 
     raise RuntimeError('BUG: reached end of __evaluate_tree! kind={}, tree: {}'.format(kind, tree))
 
@@ -335,8 +381,9 @@ def __evaluate_tree(tree, scope):
 # sqrt(2);
 # params is ["x"], while args is [2]
 def __evaluate_function(func, args, scope):
-    params = [p[1] for p in func[1]]
-    body = func[2]
+    name = func[1]
+    params = [p[1] for p in func[2]]
+    body = func[3]
 
     if len(args) != len(params):
         raise TypeError('attempted to call {}() with {} argument{}, exactly {} required'.format(
@@ -356,8 +403,6 @@ def __evaluate_function(func, args, scope):
         __evaluate_all(body, func_scope)
     except ReturnException as ret:
         return ret.args[0]
-
-    return None
 
 def evaluate_command(cmd_name):
     """ Evaluate a command, as entered in the REPL.

@@ -66,8 +66,12 @@ except TypeError as e:
 ### HIGH PRIORITY TODO ITEMS:
 # TODO: Write tests that use functions, if statements, scoping and more
 # TODO: Verify test coverage with cov
+# TODO: Start using custom exception classes, as interpreter bugs are caught by accident now
 
 ### Lower priority:
+
+# TODO: loops! for, while? do while?
+# TODO: lists! Or "arrays"? Perhaps after static typing?
 
 ### TODO: Support reading programs from files (via sys.argv to this program)
 ### TODO: test ^ error pointing with comments
