@@ -6,7 +6,10 @@ VERSION = '0.14a'
 DATE = '2015-01-21'
 DEBUGPARSE = 0
 
-class ProcyonSyntaxError(Exception):
+class ProcyonException(Exception):
+    """ Base exception for all Procyon exceptions. """
+
+class ProcyonSyntaxError(ProcyonException):
     """ Raised when the lexer/parser detects a syntax error.
 
         The exception message contains the line and column number where the error
@@ -14,19 +17,19 @@ class ProcyonSyntaxError(Exception):
     """
     pass
 
-class ProcyonInternalError(Exception):
+class ProcyonInternalError(ProcyonException):
     """ Raised when an interpreter bug occurs, such as when encountering unknown AST nodes. """
     pass
 
-class ProcyonNameError(Exception):
+class ProcyonNameError(ProcyonException):
     """ Raised when the interpreter encounters an unknown variable or function name. """
     pass
 
 
-class ProcyonTypeError(Exception):
+class ProcyonTypeError(ProcyonException):
     """ Raised when the interpreter encounters a type error, such as adding an int to a string. """
     pass
 
-class ProcyonReturnException(Exception):
+class ProcyonReturnException(ProcyonException):
     """ Raised when a function returns, with its return value as the exception value. """
     pass
