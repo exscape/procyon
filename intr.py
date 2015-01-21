@@ -5,7 +5,7 @@
 # See README.md for information and such.
 
 from procyon import evaluate
-from procyon.common import *  # VERSION, DATE, PROMPT and exceptions
+from procyon.common import *  # VERSION, DATE and exceptions
 
 import sys
 import re

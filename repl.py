@@ -5,11 +5,13 @@
 # See README.md for information and such.
 
 from procyon import evaluate, evaluate_command
-from procyon.common import *  # VERSION, DATE, PROMPT and exceptions
+from procyon.common import *  # VERSION, DATE and exceptions
 
 import sys
 import readline
 import re
+
+PROMPT = '>>> '
 
 def print_error_pos(e):
     m = re.search('input position (\d+):(\d+)$', str(e))

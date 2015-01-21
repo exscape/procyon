@@ -4,7 +4,6 @@
 
 VERSION = '0.14a'
 DATE = '2015-01-21'
-PROMPT = '>>> '
 DEBUGPARSE = 0
 
 class ProcyonSyntaxError(Exception):
