@@ -28,11 +28,12 @@ precedence = (
 # Throw exceptions on parse errors
 def p_error(p):
     if p is None:
-        raise ProcyonSyntaxError(
-            'Unexpected end of input; unbalanced parenthesis or missing argument(s)?')
+        raise ProcyonSyntaxError((-1, -1,
+            'Unexpected end of input; unbalanced parenthesis or missing argument(s)?'))
     else:
-        raise ProcyonSyntaxError('Unexpected {}({}) at input position {}:{}'.format(
-            p.type, p.value, p.lineno, column(p)))
+        raise ProcyonSyntaxError(
+            (p.lineno, column(p), 'Unexpected {}({})'.format(
+                p.type, p.value)))
 
 ###
 ### TOP LEVEL ELEMENTS

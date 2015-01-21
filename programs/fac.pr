@@ -1,0 +1,12 @@
+# Calculate the factorial of a number, recursively.
+# Only defined for positive numbers.
+func fac(n) {
+    if n < 2 {
+        return 1;
+    }
+    else {
+        return n * fac(n - 1);
+    }
+}
+
+print(fac(10));

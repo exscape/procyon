@@ -4,61 +4,64 @@
 
 # See README.md for information and such.
 
-from procyon import evaluate
-from procyon.common import *  # VERSION, DATE and exceptions
+from procyon import evaluate_file
+from procyon.common import *  # Exceptions
 
 import sys
 import re
 import readline
 
-program = """
-loops = 0;
-func fac(n) {
-    loops = loops + 1;
-    func test(x) { print("Nested function says:", x); }
-    if n < 2 { return 1; }
-    else { test(n); return n * fac(n - 1); }
-}
+def usage():
+    print (""" Procyon interpreter.
+Usage: {} <file.pr>""".format(sys.argv[0]), file=sys.stderr)
 
-print("fac(5) =", fac(5));
-print("number of loops:", loops);
-"""
+def read_file(filename):
+    """ Read a file. The caller is responsible for handling exceptions. """
+    program = None
+    with open(filename, 'r') as f:
+        program = f.read()
+        return program
 
-# program = """
-# x = 4;
-# y = 2;
-# if x > 3 {
-#     print("Setting y to some value");
-#     y = x^2 + 1 - sin(x)^2;
-# }
-# else {
-#     print("Setting y to 5");
-#     y = 5;
-# }
-# print("The value of y is", y);
-# """
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        usage()
+        sys.exit(1)
+    filename = sys.argv[1]
 
-# print(program.strip())
-# print('---------------------------------')
+    try:
+        evaluate_file(filename)
+        sys.exit(0)
+    except ProcyonSyntaxError as e:
+        (line, pos, ex_msg) = e.args[0]
+        program = None
+        try:
+            program = read_file(filename)
+        except Exception as e:
+            # This seems unlikely since the read succeeded just previously,
+            # but simply not checking doesn't seem right.
+            print("Unable to re-read file after catching syntax error! {}".format(e))
+            sys.exit(1)
 
-try:
-    res = evaluate(program)
-    # print("return from evaluate:", res)
-except ProcyonSyntaxError as e:
-    m = re.search('input position (\d+):(\d+)$', str(e))
-    if m:
-        (line, pos) = (int(m.group(1)), int(m.group(2)))
+        if line > 0 and pos > 0:
+            prog_line = program.split('\n')[line-1]
+            print(prog_line)
+            print(" " * (pos - 1) + "^")
+            print("Syntax error: {} at {}:{}:{}".format(ex_msg, filename, line, pos))
+        else:
+            # If the error is "unexpected end of input", the position is not printed, and so
+            # the regex doesn't match.
+            print("Syntax error: {}: {}".format(filename, ex_msg))
 
-        prog_line = program.split('\n')[line-1]
-        print(prog_line)
-        print(" " * (pos - 1) + "^")
-    print("Syntax error: {}".format(str(e)))
-except ProcyonInternalError as e:
-    print(str(e))
+    except ProcyonInternalError as e:
+        print(str(e))
+        sys.exit(1)
+    except ProcyonNameError as e:
+        print("Name error: {}".format(str(e)))
+    except OverflowError:
+        print("Overflow: result is out of range")
+    except ProcyonTypeError as e:
+        print("Type error: {}".format(str(e)))
+    except Exception as e:
+        print(str(e))
+
     sys.exit(1)
-except ProcyonNameError as e:
-    print("Name error: {}".format(str(e)))
-except OverflowError:
-    print("Overflow: result is out of range")
-except ProcyonTypeError as e:
-    print("Type error: {}".format(str(e)))

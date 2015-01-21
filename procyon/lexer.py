@@ -110,5 +110,5 @@ def column(token):
         return token.lexpos - last_cr
 
 def t_error(t):
-    raise ProcyonSyntaxError('Unexpected {} at input position {}:{}'.format(
-        t.value[0], t.lineno, column(t)))
+    raise ProcyonSyntaxError((t.lineno, column(t), 'Unexpected {}'.format(
+        t.value[0])))

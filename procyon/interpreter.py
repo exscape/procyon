@@ -11,7 +11,7 @@ from .common import *  # VERSION, DATE and exceptions, mostly
 import procyon.lexer as lexer
 import procyon.parser as parser
 
-__all__ = ['evaluate', 'evaluate_command']
+__all__ = ['evaluate', 'evaluate_command', 'evaluate_file']
 
 #
 # The Procyon interpreter. Takes a string and passes it to lex and yacc,
@@ -157,6 +157,18 @@ def evaluate(s, clear_state=False):
         _init_global_state()
 
     return _evaluate_all(parse_tree, __global_scope)
+
+def evaluate_file(filename, clear_state=False):
+    """ Evaluate a program file, by reading it and passing the contents to evaluate().
+
+    Caller is responsible for handling exceptions; both ones relating to open()/read() and
+    also Procyon exceptions such as syntax errors, type errors and so on.
+    """
+
+    program = None
+    with open(filename, 'r') as f:
+        program = f.read()
+        return evaluate(program, clear_state)
 
 def _evaluate_all(trees, scope):
     """ Evaluate a full set of statements and return a list of results. """
