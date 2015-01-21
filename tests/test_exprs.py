@@ -37,6 +37,22 @@ def test_division():
     with pytest.raises(ZeroDivisionError):
         ev("10/0")
 
+def test_int_division():
+    # Also known as floor division.
+    res = ev("0//100")[-1]
+    assert res == 0 and type(res) is int
+    res = ev("2//8")[-1]
+    assert res == 0 and type(res) is int
+    res = ev("5//1")[-1]
+    assert res == 5 and type(res) is int
+    res = ev("5//2")[-1]
+    assert res == 2 and type(res) is int
+    res = ev("8//2")[-1]
+    assert res == 4 and type(res) is int
+
+    with pytest.raises(ZeroDivisionError):
+        ev("10//0")
+
 def test_exponentiation():
     assert ev("2^3") == [8]
     assert ev("3^0") == [1]

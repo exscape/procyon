@@ -20,7 +20,7 @@ precedence = (
     ("left", "ANDAND"),
     ("left", "EQEQ", "NOTEQ", "LT", "GT", "LE", "GE"),
     ("left", "PLUS", "MINUS"),
-    ("left", "TIMES", "DIVIDE", "REMAINDER"),
+    ("left", "TIMES", "DIVIDE", "INTDIVIDE", "REMAINDER"),
     ("right", "UMINUS", "NOT"),
     ("right", "EXPONENT"),
 )
@@ -56,6 +56,7 @@ def p_exp_binop(p):
            | exp MINUS exp
            | exp TIMES exp
            | exp DIVIDE exp
+           | exp INTDIVIDE exp
            | exp EXPONENT exp
            | exp REMAINDER exp'''
 

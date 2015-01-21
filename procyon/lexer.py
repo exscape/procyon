@@ -18,7 +18,7 @@ from .common import ProcyonSyntaxError
 keywords = ('if', 'else', 'while', 'break', 'continue', 'func', 'return')
 
 tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals
-          'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT', 'REMAINDER',  # Math operators
+          'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT', 'REMAINDER', 'INTDIVIDE',
           'NOT',
           'ANDAND', 'OROR',                                # Logical operators
           'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',         # Comparison operators
@@ -73,6 +73,7 @@ def t_STRING(t):
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
+t_INTDIVIDE = r'//'
 t_DIVIDE = r'/'
 t_EXPONENT = r'\^'
 t_REMAINDER = r'%'

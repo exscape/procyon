@@ -210,6 +210,8 @@ def _evaluate_tree(tree, scope):
             return left * right
         elif op == '/':
             return left / right
+        elif op == '//':
+            return left // right
         elif op == '^':
             return left ** right
         elif op == '%':
@@ -468,7 +470,7 @@ def evaluate_command(cmd):  # ignore coverage
             print("{}:\t{}".format(var, __global_scope[1][var]))
     elif cmd_name == 'help':
         print("# Procyon REPL v" + VERSION + ", " + DATE)
-        print("# Supported operators: + - * / ^ % ( ) = == != < > >= <= && ||")
+        print("# Supported operators: + - * / // ^ % ( ) = == != < > >= <= && ||")
         print("# Comments begin with a hash sign, as these lines do.")
         print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
         print("# a = 5")
