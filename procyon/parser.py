@@ -4,6 +4,11 @@
 
 from .lexer import tokens, column
 
+#
+# Procyon parser definitions.
+# The actual parsing (ply.yacc) is called from interpreter.py, in evaluate().
+#
+
 # Operator associativity and precedence rules
 # From lowest to highest precedence.
 # These are similar to C, but not identical (a > b > c is more useful here than in C).
@@ -69,14 +74,14 @@ def p_exp_uminus(p):
 ### COMPARISONS
 ##
 
-### All of the following need to work:
-### 5 > 4: True
-### 5 > 4 > 3: True
-### (5 > 4) > 3: False, since (5 > 4) evaluates to 1, so 1 > 3 gives False
-### (5 > 4 > 3 == 1): False (3 != 1)
-### 1 == (5 > 4 > 3): True
-### ... and so on.
-
+# All of the following need to work:
+# 5 > 4: True
+# 5 > 4 > 3: True
+# (5 > 4) > 3: False, since (5 > 4) evaluates to 1, so 1 > 3 gives False
+# (5 > 4 > 3 == 1): False (3 != 1)
+# 1 == (5 > 4 > 3): True
+# ... and so on.
+#
 # a > b             -> ('comp', [('ident', 'a'), '>', ('ident', 'b')])
 # a > b >= c        -> ('comp', [('ident', 'a'), '>', ('ident', 'b'), '>=', ('ident', 'c')])
 # (a > b >= c) == d -> ('comp', [(comp, ... from prev line), '==', ('ident', 'd')])

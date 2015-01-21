@@ -2,6 +2,17 @@
 
 # vim: ts=4 sts=4 et sw=4
 
+#
+# Proycon lexer definitions.
+# If you know how a lexer works, nothing in this file should be very
+# surprising.
+# The actual lexing is done by ply.lex; the call to that is located in
+# interpreter.py, in evaluate().
+#
+# Token rules that use functions are evaluated in the order they are defined,
+# while string rules are sorted by length and evaluated longest first.
+#
+
 keywords = ('if', 'else', 'func', 'return')
 
 tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals
@@ -78,9 +89,9 @@ t_RBRACE = r'\}'
 t_ASSIGN = r'='
 t_COMMA = r','
 t_SEMICOLON = r';'
-# NOTE: don't add token rules for IF, ELSE etc.; see ply docs section 4.3
 
-# Comments begin with # and last one line; whitespace outside of strings etc. is ignored
+# Comments begin with # and last one line; whitespace outside of strings etc. is ignored.
+# Newlines are not ignored (see below), as we need them to track line numbers.
 t_ignore_COMMENT = r'\#.*'
 t_ignore = "\t\r\v "
 
@@ -89,6 +100,7 @@ def t_newline(t):
     t.lexer.lineno += len(t.value)
 
 def column(token):
+    """ Calculate the (1-indexed) column number for a given token. """
     last_cr = token.lexer.lexdata.rfind('\n', 0, token.lexpos)
     if last_cr < 0:
         return token.lexpos + 1

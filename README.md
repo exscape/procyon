@@ -28,3 +28,9 @@ Now, with that said...
 * .help command (that is destined to be forever incomplete; listing all language features
       would get old quickly, both for me to write, and for the reader to look through
 * Value of last evaluation is accessible as _ (actually, this is true in the language itself)
+
+#### System requirements:
+
+* Python 3 (I have only tested 3.4.2)
+* PLY (Python Lex-Yacc)
+* Optional: pytest, with plugins pytest-cov and pytest-pep8 (only required for running the tests)

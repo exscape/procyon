@@ -4,26 +4,6 @@
 
 # See README.md for information and such.
 
-### HIGH PRIORITY TODO ITEMS:
-# TODO: start using custom exception classes, as interpreter bugs are caught by accident now
-# TODO: elseif
-
-### Lower priority:
-# TODO: function definitions can shadow built-ins; is that desirable or a bug?
-# TODO: REPL: multi-line statements; "import"-ish functionality for loading code
-# TODO: resolve shift-reduce conflicts for the comparison operators (PLY parses it as intended,
-#       but it does warn)
-# TODO: loops! for, while? do while?
-# TODO: lists! Or "arrays"? Perhaps after static typing?
-# TODO: types?
-# TODO: inline if-statements (and unless) -- ternary can NOT use if/else syntax,
-#       or "return x if y" becomes a bit ugly, as it could be "return x" if y, or
-#       return "x if y else z". Might be easy to parse, but it doesn't look great either way.
-
-# TODO: support reading programs from files (via sys.argv to intr.py)
-# TODO: test ^ error pointing with comments
-# TODO: fix ^ pointing with tab indentation
-
 from procyon import evaluate, evaluate_command
 from procyon.common import VERSION, DATE, PROMPT
 

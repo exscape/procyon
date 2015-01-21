@@ -13,6 +13,11 @@ import procyon.parser as parser
 
 __all__ = ['evaluate', 'evaluate_command']
 
+#
+# The Procyon interpreter. Takes a string and passes it to lex and yacc,
+# then interprets the syntax tree.
+#
+
 # A scope is written as a tuple, (parent_scope, {'name': val, 'name2': val2, ...})
 # The global scope has None as its parent.
 
