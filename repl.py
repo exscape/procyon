@@ -24,10 +24,7 @@ while True:
         input_str = input(PROMPT).strip()
         try:
             if len(input_str) > 0 and input_str[0] == '.':
-                if len(input_str.split()) > 1:
-                    print('Invalid command:', input_str)
-                else:
-                    evaluate_command(input_str[1:])
+                evaluate_command(input_str[1:])
                 continue
             else:
                 results = evaluate(input_str)
@@ -50,6 +47,8 @@ while True:
         except ProcyonInternalError as e:
             print("BUG: {}".format(str(e)))
             sys.exit(1)
+        except Exception as e:
+            print(str(e))
 
     except (KeyboardInterrupt, EOFError):
         print("")

@@ -27,6 +27,7 @@ Now, with that said...
 * .vars command to show the value of all variables (except unchanged built-ins, e and pi for now)
 * .help command (that is destined to be forever incomplete; listing all language features
       would get old quickly, both for me to write, and for the reader to look through
+* .import command to load function definitions from files (the file is interpreted using the current REPL state)
 * Value of last evaluation is accessible as _ (actually, this is true in the language itself)
 
 #### System requirements:

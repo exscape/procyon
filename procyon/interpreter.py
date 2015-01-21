@@ -408,12 +408,14 @@ def _evaluate_function(func, args, scope):
     except ProcyonReturnException as ret:
         return ret.args[0]
 
-def evaluate_command(cmd_name):
+def evaluate_command(cmd):
     """ Evaluate a command, as entered in the REPL.
 
         Commands are not supported for programming; they're merely
         intended as minor helpers for interactive use.
     """
+
+    (cmd_name, *args) = re.split("\s+", cmd)
 
     if cmd_name == 'vars':  # ignore coverage
         # Bit of a mess... Fetch each variable name.
@@ -428,18 +430,19 @@ def evaluate_command(cmd_name):
         for var in sorted(vars):
             print("{}:\t{}".format(var, __global_scope[1][var]))
     elif cmd_name == 'help':  # ignore coverage
-        print("# Procyon v" + VERSION + ", " + DATE)
+        print("# Procyon REPL v" + VERSION + ", " + DATE)
         print("# Supported operators: + - * / ^ ( ) = == != < > >= <= && ||")
         print("# Comments begin with a hash sign, as these lines do.")
         print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
         print("# a = 5")
-        print("# a == 5 # returns True")
+        print("# a == 5 # returns 1 (true)")
         print("#")
         print("# Supported commands (in the REPL only):")
         print("# .help - this text")
         print("# .vars - show all variables, except non-modified builtins")
+        print("# .import <file.pr> - load and execute a file, making its functions and variables available")
         print("#")
-        print("# Supported functions (number of arguments, if not 1):")
+        print("# Built-in functions (number of arguments, if not 1):")
         print("# " + ", ".join(sorted(["{}{}".format(f, "({})".format(
             __functions[f]) if __functions[f] > 1 else "") for f in __functions])))
         print("#")
@@ -448,5 +451,10 @@ def evaluate_command(cmd_name):
         print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
         print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
         print("# See README.md for more information.")
+    elif cmd_name == 'import':
+        if len(args) == 1:
+            evaluate_file(args[0])
+        else:
+            print("Usage: .import <file.py>")
     else:
         raise ProcyonNameError("unknown command {}".format(cmd_name))
