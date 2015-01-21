@@ -15,7 +15,7 @@ from .common import ProcyonSyntaxError
 # while string rules are sorted by length and evaluated longest first.
 #
 
-keywords = ('if', 'else', 'while', 'break', 'func', 'return')
+keywords = ('if', 'else', 'while', 'break', 'continue', 'func', 'return')
 
 tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals
           'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT', 'REMAINDER',  # Math operators

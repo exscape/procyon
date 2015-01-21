@@ -30,10 +30,11 @@ class ProcyonTypeError(ProcyonException):
     """ Raised when the interpreter encounters a type error, such as adding an int to a string. """
     pass
 
-class ProcyonReturnException(ProcyonException):
-    """ Raised when a function returns, with its return value as the exception value. """
-    pass
+class ProcyonControlFlowException(ProcyonException):
+    """ Raised by return, break, continue and abort(); exception arguments show the type.
 
-class ProcyonBreakException(ProcyonException):
-    """ Raised when a while loop executes a break statements. """
+    args[0] is a dictionary with one or two entries.
+    "type": "return" | "break" | "continue" | "abort", and if type is "return",
+    also a key named "value" holding the function's return value.
+    """
     pass

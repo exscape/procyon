@@ -130,7 +130,7 @@ __functions = {'sin': 1, 'cos': 1, 'tan': 1,
                'sinh': 1, 'cosh': 1, 'tanh': 1,
                'asinh': 1, 'acosh': 1, 'atanh': 1,
                'abs': 1, 'sqrt': 1, 'ceil': 1, 'floor': 1,
-               'trunc': 1, 'round': 2, 'print': -1}
+               'trunc': 1, 'round': 2, 'print': -1, 'abort': 0}
 
 def _init_global_state():
     global __global_scope
@@ -308,6 +308,11 @@ def _evaluate_tree(tree, scope):
         func_name = tree[1][1]
         args = tree[2]
 
+        if func_name == "abort":
+            # Bit of a hack, but hey... This can't really be implemented
+            # as an actual function, so it has to be some sort of special case.
+            raise ProcyonControlFlowException({"type": "abort"})
+
         if func_name not in __functions and not _var_exists(scope, func_name):
             raise ProcyonNameError('unknown function "{}"'.format(func_name))
 
@@ -365,12 +370,23 @@ def _evaluate_tree(tree, scope):
         while _evaluate_tree(cond, scope):  # Use the old scope here!
             try:
                 _evaluate_all(body, new_scope)
-            except ProcyonBreakException:
-                return None
+            except ProcyonControlFlowException as ex:
+                # I'd like to call this variable "type", but that didn't work out too well...
+                # (Python's type() function stopped working elsewhere :-)
+                t = ex.args[0]["type"]
+                if t == "break":
+                    return None
+                elif t == "continue":
+                    continue
+                else:
+                    raise  # return or abort; this is handled elsewhere
         return None
 
     elif kind == "break":
-        raise ProcyonBreakException(None)
+        raise ProcyonControlFlowException({"type": "break"})
+
+    elif kind == "continue":
+        raise ProcyonControlFlowException({"type": "continue"})
 
     elif kind == "func":
         # We ran across a function definition. Bind its set of statements etc. to
@@ -386,9 +402,9 @@ def _evaluate_tree(tree, scope):
     elif kind == "return":
         if tree[1] is not None:
             val = _evaluate_tree(tree[1], scope)
-            raise ProcyonReturnException(val)
+            raise ProcyonControlFlowException({"type": "return", "value": val})
         else:
-            raise ProcyonReturnException(None)
+            raise ProcyonControlFlowException({"type": "return", "value": None})
 
     raise ProcyonInternalError('reached end of _evaluate_tree! kind={}, tree: {}'.format(
         kind, tree))  # ignore coverage
@@ -422,8 +438,12 @@ def _evaluate_function(func, args, scope):
 
     try:
         _evaluate_all(body, func_scope)
-    except ProcyonReturnException as ret:
-        return ret.args[0]
+    except ProcyonControlFlowException as ex:
+        args = ex.args[0]
+        if args["type"] == "return":
+            return args["value"]
+        else:
+            raise  # break or continue called outside of loop, or abort()
 
 def evaluate_command(cmd):  # ignore coverage
     """ Evaluate a command, as entered in the REPL.

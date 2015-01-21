@@ -55,8 +55,13 @@ if __name__ == '__main__':
     except ProcyonInternalError as e:
         print(str(e))
         sys.exit(1)
-    except ProcyonBreakException as e:
-        print("Error: break called when not in a loop")
+    except ProcyonControlFlowException as e:
+        type = e.args[0]["type"]
+        if type == "abort":
+            print("abort() called")
+        else:
+            print("Error: {} called outside of a {}".format(
+                type, "function" if type == "return" else "loop"))
     except ProcyonNameError as e:
         print("Name error: {}".format(str(e)))
     except OverflowError:

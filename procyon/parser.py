@@ -239,6 +239,10 @@ def p_statement_break(p):
     'statement : BREAK'
     p[0] = ('break',)
 
+def p_statement_continue(p):
+    'statement : CONTINUE'
+    p[0] = ('continue',)
+
 def p_statement_func(p):
     'block_statement : FUNC ident LPAREN optargs RPAREN block'
     p[0] = ("func", p[2], p[4], p[6])

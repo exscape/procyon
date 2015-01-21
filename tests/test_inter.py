@@ -228,6 +228,21 @@ def test_while_break():
     """
     assert ev(prog)[-1] == 10
 
+def test_while_continue():
+    prog = """
+    a = 0;
+    sum = 0;
+    while a < 10 {
+        a = a + 1;
+        if a % 2 == 0 {
+            continue;
+        }
+        sum = sum + a;
+    }
+    sum;
+    """
+    assert ev(prog)[-1] == 1+3+5+7+9
+
 def test_while_3():
     prog = """
     a = 0;
@@ -374,3 +389,54 @@ def test_short_circuit_misc():
     for test in tests:
         prog = header + test + footer
         assert ev(prog)[-1] == 0  # Test that err == 0
+
+#
+# Miscellaneous tests
+#
+
+def test_abort():
+    prog = """
+    a = 10;
+    while 1 { abort(); }
+    """
+    with pytest.raises(ProcyonControlFlowException) as e:
+        ev(prog)
+        assert e.args[0]["type"] == "abort"
+
+def test_return_in_loop():
+    prog = """
+    func f() {
+        a = 0;
+        while 1 {
+            a = a + 1;
+            if a > 10 {
+                return a;
+            }
+        }
+    }
+    f();
+    """
+    assert ev(prog)[-1] == 11
+
+def test_break_in_function():
+    prog = """
+    func f() {
+        break;
+    }
+    f();
+    """
+    with pytest.raises(ProcyonControlFlowException) as e:
+        ev(prog)
+        assert e.args[0]["type"] == "break"
+
+
+def test_continue_in_function():
+    prog = """
+    func f() {
+        continue;
+    }
+    f();
+    """
+    with pytest.raises(ProcyonControlFlowException) as e:
+        ev(prog)
+        assert e.args[0]["type"] == "continue"
