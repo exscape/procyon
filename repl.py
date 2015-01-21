@@ -13,12 +13,9 @@ import re
 
 PROMPT = '>>> '
 
-def print_error_pos(e):
-    m = re.search('input position (\d+):(\d+)$', str(e))
-    if m:
-        (line, pos) = (int(m.group(1)), int(m.group(2)))
-        assert line == 1
-        print(" " * (pos - 1 + len(PROMPT)) + "^")
+def print_error_pos(line, pos):
+    assert line == 1
+    print(" " * (pos - 1 + len(PROMPT)) + "^")
 
 print("Procyon interpreter v" + VERSION + ", " + DATE)
 
@@ -42,8 +39,12 @@ while True:
         except OverflowError:
             print("Overflow: result is out of range")
         except ProcyonSyntaxError as e:
-            print_error_pos(e)
-            print("Syntax error: {}".format(str(e)))
+            (line, pos, ex_msg) = e.args[0]
+            if line > 0 and pos > 0:
+                print_error_pos(line, pos)
+                print("Syntax error: {} at input position {}:{}".format(ex_msg, line, pos))
+            else:
+                print("Syntax error: {}".format(ex_msg))
         except ProcyonTypeError as e:
             print("Type error: {}".format(str(e)))
         except ProcyonInternalError as e:
