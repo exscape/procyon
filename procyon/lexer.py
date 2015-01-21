@@ -2,6 +2,8 @@
 
 # vim: ts=4 sts=4 et sw=4
 
+from .common import ProcyonSyntaxError
+
 #
 # Proycon lexer definitions.
 # If you know how a lexer works, nothing in this file should be very
@@ -108,5 +110,5 @@ def column(token):
         return token.lexpos - last_cr
 
 def t_error(t):
-    raise SyntaxError('Unexpected {} at input position {}:{}'.format(
+    raise ProcyonSyntaxError('Unexpected {} at input position {}:{}'.format(
         t.value[0], t.lineno, column(t)))

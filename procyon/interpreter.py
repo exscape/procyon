@@ -55,7 +55,7 @@ def _var_exists(scope, var):
     """ Test if a variable exists in a given scope, or any parent/grandparent scope. """
     try:
         _read_var(scope, var)
-    except NameError:
+    except ProcyonNameError:
         return False
 
     return True
@@ -79,7 +79,7 @@ def _read_var(scope, var):
             return _read_var(scope[0], var)
         else:
             # There is no parent scope, and we still haven't found it. Give up.
-            raise NameError('unknown identifier \"{}\"'.format(var))
+            raise ProcyonNameError('unknown identifier \"{}\"'.format(var))
 
 def _assign_var(scope, var, value):
     """ Set a variable in a given scope. Returns the value that was assigned.
@@ -184,11 +184,11 @@ def _evaluate_tree(tree, scope):
 
         if type(left) != type(right) and not (
                 type(left) in (int, float) and type(right) in (int, float)):
-            raise TypeError("binary operation on expressions of different types:"
-                            "{} {} {}".format(left, op, right))
+            raise ProcyonTypeError("binary operation on expressions of different types:"
+                                   "{} {} {}".format(left, op, right))
 
         if type(left) is str and type(right) is str and op != '+':
-            raise TypeError("operator {} is not defined on strings".format(op))
+            raise ProcyonTypeError("operator {} is not defined on strings".format(op))
 
         if op == '+':
             return left + right
@@ -255,8 +255,8 @@ def _evaluate_tree(tree, scope):
                 return int(left <= right)
             elif op == '>=':
                 return int(left >= right)
-            else:
-                raise RuntimeError("BUG: unknown operator in comp_one")
+            else:  # ignore coverage
+                raise ProcyonInternalError("unknown operator in comp_one")
 
         comparisons = tree[1]
 
@@ -274,18 +274,18 @@ def _evaluate_tree(tree, scope):
     elif kind == "ident":
         name = tree[1]
         if name in __functions:
-            raise TypeError("can't use built-in function \"{}\" as a variable".format(name))
+            raise ProcyonTypeError("can't use built-in function \"{}\" as a variable".format(name))
 
         try:
             return _read_var(scope, name)
-        except NameError:
-            raise NameError('unknown identifier "{}"'.format(name))
+        except ProcyonNameError:
+            raise ProcyonNameError('unknown identifier "{}"'.format(name))
 
     elif kind == "assign":
         name = tree[1][1]
 
         if name in __functions:
-            raise TypeError('cannot assign to built-in function "{}"'.format(name))
+            raise ProcyonTypeError('cannot assign to built-in function "{}"'.format(name))
 
         val = tree[2]
         return _assign_var(scope, name, _evaluate_tree(val, scope))
@@ -295,7 +295,7 @@ def _evaluate_tree(tree, scope):
         args = tree[2]
 
         if func_name not in __functions and not _var_exists(scope, func_name):
-            raise NameError('unknown function "{}"'.format(func_name))
+            raise ProcyonNameError('unknown function "{}"'.format(func_name))
 
         # OK, so it exists either as a built-in (__functions) or a user-defined function.
         # Check if it's user-defined, first:
@@ -305,7 +305,7 @@ def _evaluate_tree(tree, scope):
             if type(f) is tuple and f[0] == "func":
                 return _evaluate_function(f, args, scope)
             else:
-                raise TypeError('attempted to call non-function "{}"'.format(func_name))
+                raise ProcyonTypeError('attempted to call non-function "{}"'.format(func_name))
 
         assert not _var_exists(scope, func_name)
         assert func_name in __functions
@@ -314,7 +314,7 @@ def _evaluate_tree(tree, scope):
         # either from math, or a built-in (abs, round, print and possibly others).
 
         if __functions[func_name] > 0 and len(args) != __functions[func_name]:
-            raise TypeError('{} requires exactly {} arguments, {} provided'.format(
+            raise ProcyonTypeError('{} requires exactly {} arguments, {} provided'.format(
                 func_name, __functions[func_name], len(args)))
 
         args = [_evaluate_tree(arg, scope) for arg in args]
@@ -357,11 +357,12 @@ def _evaluate_tree(tree, scope):
     elif kind == "return":
         if tree[1] is not None:
             val = _evaluate_tree(tree[1], scope)
-            raise ReturnException(val)
+            raise ProcyonReturnException(val)
         else:
-            raise ReturnException(None)
+            raise ProcyonReturnException(None)
 
-    raise RuntimeError('BUG: reached end of _evaluate_tree! kind={}, tree: {}'.format(kind, tree))
+    raise ProcyonInternalError('reached end of _evaluate_tree! kind={}, tree: {}'.format(
+        kind, tree))  # ignore coverage
 
 # Executes a user-defined function
 # Note: "args" refers to the arguments the function is passed,
@@ -376,8 +377,9 @@ def _evaluate_function(func, args, scope):
     body = func[3]
 
     if len(args) != len(params):
-        raise TypeError('attempted to call {}() with {} argument{}, exactly {} required'.format(
-            "s" if len(args) == 1 else "", name, len(args), len(params)))
+        raise ProcyonTypeError(
+            'attempted to call {}() with {} argument{}, exactly {} required'.format(
+                "s" if len(args) == 1 else "", name, len(args), len(params)))
 
     # Evaluate arguments in the *calling* scope!
     args = [_evaluate_tree(a, scope) for a in args]
@@ -391,7 +393,7 @@ def _evaluate_function(func, args, scope):
 
     try:
         _evaluate_all(body, func_scope)
-    except ReturnException as ret:
+    except ProcyonReturnException as ret:
         return ret.args[0]
 
 def evaluate_command(cmd_name):
@@ -435,4 +437,4 @@ def evaluate_command(cmd_name):
         print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
         print("# See README.md for more information.")
     else:
-        raise NameError("unknown command {}".format(cmd_name))
+        raise ProcyonNameError("unknown command {}".format(cmd_name))

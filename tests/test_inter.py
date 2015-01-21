@@ -26,13 +26,13 @@ def test_function_args():
 
 def test_function_wrong_args():
     prog = "func one(x) { return x; } one();"
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev(prog)
     prog = "func one(x) { return x; } one(1,2);"
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev(prog)
     prog = "func one(x) { return x; } one(1,2,3);"
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev(prog)
 
 def test_nested_functions():
@@ -55,7 +55,7 @@ def test_nested_functions_fail():
     }
     pow_3(10);
     """
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev(prog)
 
 #
@@ -95,12 +95,12 @@ def test_string_4(capsys):
 
 def test_string_fail_1():
     prog = """ print(4 + "abc"); """
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev(prog)
 
 def test_string_fail_2():
     prog = """ print("abc" - "def"); """
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev(prog)
 
 
@@ -188,7 +188,7 @@ def test_if_scope_fail():
     }
     x = p(50);
     """
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev(prog)
 
 #
@@ -244,7 +244,7 @@ def test_scoping_fail_1():
     }
     print(xyz);
     """
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev(prog)
 
 def test_scoping_fail_2():
@@ -260,7 +260,7 @@ def test_scoping_fail_2():
     }
     test(12, 4);
     """
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev(prog)
 
 #

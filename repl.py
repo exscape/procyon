@@ -5,7 +5,7 @@
 # See README.md for information and such.
 
 from procyon import evaluate, evaluate_command
-from procyon.common import VERSION, DATE, PROMPT
+from procyon.common import *  # VERSION, DATE, PROMPT and exceptions
 
 import sys
 import readline
@@ -35,16 +35,16 @@ while True:
 
             if results is not None and len([r for r in results if r is not None]) > 0:
                 print("\n".join([str(r) for r in results if r is not None]))
-        except NameError as e:
+        except ProcyonNameError as e:
             print("Name error: {}".format(str(e)))
         except OverflowError:
             print("Overflow: result is out of range")
-        except SyntaxError as e:
+        except ProcyonSyntaxError as e:
             print_error_pos(e)
             print("Syntax error: {}".format(str(e)))
-        except TypeError as e:
+        except ProcyonTypeError as e:
             print("Type error: {}".format(str(e)))
-        except RuntimeError as e:
+        except ProcyonInternalError as e:
             print("BUG: {}".format(str(e)))
             sys.exit(1)
 

@@ -135,7 +135,7 @@ def test_comparisons_3():
     assert ev("((34 == 30 + 4) == 1) == 0") == [0]
 
 def test_exceptions_1():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         # Multiline to test a code path in the lexer.
         # (Though the test doesn't really do anything useful in that regard...)
         ev("""
@@ -143,59 +143,59 @@ def test_exceptions_1():
         """)
 
 def test_exceptions_2():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         ev("1+(3+(4)")
 
 def test_exceptions_3():
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev("sin")
 
 def test_exceptions_4():
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev("cos()")
 
 def test_exceptions_5():
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev("cos(3, 2)")
 
 def test_exceptions_6():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         ev("2^3!")
 
 def test_exceptions_7():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         ev("10 + 3 + 5%")
 
 def test_exceptions_8():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         ev(".hello")
 
 def test_exceptions_9():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         ev("sin(1) = 3")
 
 def test_exceptions_10():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         ev("10 + 1; 3 * (3; 2)")
 
 def test_exceptions_11():
-    with pytest.raises(SyntaxError):
+    with pytest.raises(ProcyonSyntaxError):
         ev("(4 + 1; 1 && 3)")
 
 def test_exceptions_12():
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev_command(".hello")
 
 def test_exceptions_13():
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev("num = 10; num(123)")
 
 def test_nameerror_1():
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev("5 + abc")
 
 def test_nameerror_2():
-    with pytest.raises(TypeError):
+    with pytest.raises(ProcyonTypeError):
         ev("sin = 40")
 
 def test_not():
@@ -255,9 +255,9 @@ def test_and_or_3():
     assert ev("a=5;b=10;c=15;a+b == c && a == c-b && (a+b+c == 15 || a+b == 15)") == [5, 10, 15, 1]
     assert ev("sin(0) || cos(0)") == [1]
     assert ev("0 && 1; 10.1 < 12 < 44 && (1 > 2 || 3)") == [0, 1]
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev("0 && (xyz = sin(1)); xyz")
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev("xyz + 1")
 
 # After spending two days getting this right,
@@ -311,7 +311,7 @@ def test_builtin_functions():
     assert ev("round(123.456, 0)") == [123]
     assert ev("round(123456, -3)") == [123000]
 
-    with pytest.raises(NameError):
+    with pytest.raises(ProcyonNameError):
         ev("blah(123)")
 
 def test_misc():

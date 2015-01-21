@@ -5,7 +5,7 @@
 # See README.md for information and such.
 
 from procyon import evaluate
-from procyon.common import PROMPT
+from procyon.common import *  # VERSION, DATE, PROMPT and exceptions
 
 import sys
 import re
@@ -44,7 +44,7 @@ print("number of loops:", loops);
 try:
     res = evaluate(program)
     # print("return from evaluate:", res)
-except SyntaxError as e:
+except ProcyonSyntaxError as e:
     m = re.search('input position (\d+):(\d+)$', str(e))
     if m:
         (line, pos) = (int(m.group(1)), int(m.group(2)))
@@ -53,12 +53,12 @@ except SyntaxError as e:
         print(prog_line)
         print(" " * (pos - 1) + "^")
     print("Syntax error: {}".format(str(e)))
-except RuntimeError as e:
+except ProcyonInternalError as e:
     print(str(e))
     sys.exit(1)
-except NameError as e:
+except ProcyonNameError as e:
     print("Name error: {}".format(str(e)))
 except OverflowError:
     print("Overflow: result is out of range")
-except TypeError as e:
+except ProcyonTypeError as e:
     print("Type error: {}".format(str(e)))

@@ -3,6 +3,7 @@
 # vim: ts=4 sts=4 et sw=4
 
 from .lexer import tokens, column
+from .common import ProcyonSyntaxError
 
 #
 # Procyon parser definitions.
@@ -27,9 +28,10 @@ precedence = (
 # Throw exceptions on parse errors
 def p_error(p):
     if p is None:
-        raise SyntaxError('Unexpected end of input; unbalanced parenthesis or missing argument(s)?')
+        raise ProcyonSyntaxError(
+            'Unexpected end of input; unbalanced parenthesis or missing argument(s)?')
     else:
-        raise SyntaxError('Unexpected {}({}) at input position {}:{}'.format(
+        raise ProcyonSyntaxError('Unexpected {}({}) at input position {}:{}'.format(
             p.type, p.value, p.lineno, column(p)))
 
 ###
