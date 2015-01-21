@@ -18,7 +18,7 @@ from .common import ProcyonSyntaxError
 keywords = ('if', 'else', 'func', 'return')
 
 tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals
-          'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT',  # Math operators
+          'PLUS', 'MINUS', 'TIMES', 'DIVIDE', 'EXPONENT', 'REMAINDER',  # Math operators
           'NOT',
           'ANDAND', 'OROR',                                # Logical operators
           'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',         # Comparison operators
@@ -75,6 +75,7 @@ t_MINUS = r'-'
 t_TIMES = r'\*'
 t_DIVIDE = r'/'
 t_EXPONENT = r'\^'
+t_REMAINDER = r'%'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_NOT = r'!'

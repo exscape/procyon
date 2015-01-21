@@ -12,7 +12,7 @@ import re
 import readline
 
 def usage():
-    print (""" Procyon interpreter.
+    print(""" Procyon interpreter.
 Usage: {} <file.pr>""".format(sys.argv[0]), file=sys.stderr)
 
 def read_file(filename):

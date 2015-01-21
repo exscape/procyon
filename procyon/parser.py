@@ -20,7 +20,7 @@ precedence = (
     ("left", "ANDAND"),
     ("left", "EQEQ", "NOTEQ", "LT", "GT", "LE", "GE"),
     ("left", "PLUS", "MINUS"),
-    ("left", "TIMES", "DIVIDE"),
+    ("left", "TIMES", "DIVIDE", "REMAINDER"),
     ("right", "UMINUS", "NOT"),
     ("right", "EXPONENT"),
 )
@@ -28,8 +28,8 @@ precedence = (
 # Throw exceptions on parse errors
 def p_error(p):
     if p is None:
-        raise ProcyonSyntaxError((-1, -1,
-            'Unexpected end of input; unbalanced parenthesis or missing argument(s)?'))
+        raise ProcyonSyntaxError(
+            (-1, -1, 'Unexpected end of input; unbalanced parenthesis or missing argument(s)?'))
     else:
         raise ProcyonSyntaxError(
             (p.lineno, column(p), 'Unexpected {}({})'.format(
@@ -56,7 +56,8 @@ def p_exp_binop(p):
            | exp MINUS exp
            | exp TIMES exp
            | exp DIVIDE exp
-           | exp EXPONENT exp'''
+           | exp EXPONENT exp
+           | exp REMAINDER exp'''
 
     p[0] = ("binop", p[1], p[2], p[3])
 

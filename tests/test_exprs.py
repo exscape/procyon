@@ -29,15 +29,33 @@ def test_multiplication():
     assert ev("5*4*3") == [60]
 
 def test_division():
-    assert ev("0*100") == [0]
-    assert ev("10*100") == [1000]
-    assert ev("5*4*3") == [60]
+    assert ev("0/100") == [0]
+    assert ev("2/8") == [0.25]
+    assert ev("5/1") == [5]
+    assert ev("5/2") == [2.5]
+
+    with pytest.raises(ZeroDivisionError):
+        ev("10/0")
 
 def test_exponentiation():
     assert ev("2^3") == [8]
     assert ev("3^0") == [1]
     assert ev("2^-2") == [0.25]
     assert ev("2^(-2)") == [0.25]
+
+def test_remainder():
+    assert ev("10 % 3") == [1]
+    assert ev("10.0 % 3") == [1]
+    assert ev("10.0 % 3.0") == [1]
+    assert ev("10 % 3.0") == [1]
+    assert ev("0 % 3") == [0]
+    assert ev("1 % 3") == [1]
+    assert ev("2 % 3") == [2]
+    assert ev("3 % 3") == [0]
+    assert ev("4 % 3") == [1]
+
+    with pytest.raises(ZeroDivisionError):
+        ev("10 % 0")
 
 def test_floats():
     # We need to be careful here, since we test equality. 1/10 won't yield exactly 0.1,
