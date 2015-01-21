@@ -33,3 +33,7 @@ class ProcyonTypeError(ProcyonException):
 class ProcyonReturnException(ProcyonException):
     """ Raised when a function returns, with its return value as the exception value. """
     pass
+
+class ProcyonBreakException(ProcyonException):
+    """ Raised when a while loop executes a break statements. """
+    pass

@@ -192,6 +192,65 @@ def test_if_scope_fail():
         ev(prog)
 
 #
+# Test while loops
+#
+
+def test_while_1():
+    prog = """
+    a = 0;
+    while a < 10 {
+        a = a + 1;
+    }
+    a;
+    """
+    assert ev(prog)[-1] == 10
+
+def test_while_2():
+    prog = """
+    a = 0;
+    while (a > 10) {
+        a = a + 1;
+    }
+    a;
+    """
+    assert ev(prog)[-1] == 0
+
+def test_while_break():
+    prog = """
+    a = 0;
+    while 1 {
+        a = a + 1;
+        if a >= 10 {
+            break;
+        }
+    }
+    a;
+    """
+    assert ev(prog)[-1] == 10
+
+def test_while_3():
+    prog = """
+    a = 0;
+    while (a < 5)
+        a = a + 1;
+    a;
+    """
+    with pytest.raises(ProcyonSyntaxError):
+        ev(prog)
+
+def test_while_scope_fail():
+    prog = """
+    a = 0;
+    while (a < 5) {
+        a = a + 1;
+        b = 1;
+    }
+    b;
+    """
+    with pytest.raises(ProcyonNameError):
+        ev(prog)
+
+#
 # Test variable scoping
 #
 

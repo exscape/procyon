@@ -231,6 +231,14 @@ def p_statement_if_else(p):
     'block_statement : IF exp block ELSE block'
     p[0] = ('if', p[2], p[3], p[5])
 
+def p_statement_while(p):
+    'block_statement : WHILE exp block'
+    p[0] = ('while', p[2], p[3])
+
+def p_statement_break(p):
+    'statement : BREAK'
+    p[0] = ('break',)
+
 def p_statement_func(p):
     'block_statement : FUNC ident LPAREN optargs RPAREN block'
     p[0] = ("func", p[2], p[4], p[6])

@@ -42,6 +42,8 @@ while True:
                 print("Syntax error: {} at input position {}:{}".format(ex_msg, line, pos))
             else:
                 print("Syntax error: {}".format(ex_msg))
+        except ProcyonBreakException as e:
+            print("Error: break called when not in a loop")
         except ProcyonTypeError as e:
             print("Type error: {}".format(str(e)))
         except ProcyonInternalError as e:

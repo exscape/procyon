@@ -356,6 +356,21 @@ def _evaluate_tree(tree, scope):
             return _evaluate_all(then_body, new_scope)
         elif else_body:
             return _evaluate_all(else_body, new_scope)
+        else:
+            return None
+
+    elif kind == "while":
+        new_scope = _new_scope(scope, [], [])
+        (cond, body) = tree[1:]
+        while _evaluate_tree(cond, scope):  # Use the old scope here!
+            try:
+                _evaluate_all(body, new_scope)
+            except ProcyonBreakException:
+                return None
+        return None
+
+    elif kind == "break":
+        raise ProcyonBreakException(None)
 
     elif kind == "func":
         # We ran across a function definition. Bind its set of statements etc. to
