@@ -151,7 +151,17 @@ def evaluate(s, clear_state=False):
     parse_tree = yacc_parser.parse(s, lexer=lex_lexer, debug=DEBUGPARSE)
 
     if DEBUGPARSE:
-        print('ENTIRE TREE:', parse_tree)
+        # Yep, this is (up to) 200 chars wide!
+        # Semi-complex parse trees are unreadable at 100 chars or less, so
+        # I figure "why not?". Fits on a single 1080p monitor. Resizing a terminal
+        # isn't that difficult. :-)
+        import pprint
+        print("Parse tree:")
+        tstr = pprint.pformat(parse_tree, indent=4, width=200)
+        max_len = max([len(line) for line in tstr.split('\n')])
+        print("-" * max_len)
+        print(tstr)
+        print("-" * max_len)
 
     if clear_state:
         _init_global_state()
@@ -454,7 +464,7 @@ def evaluate_command(cmd):  # ignore coverage
         intended as minor helpers for interactive use.
     """
 
-    (cmd_name, *args) = re.split("\s+", cmd)
+    (cmd_name, *args) = re.split(r'\s+', cmd)
 
     if cmd_name == 'vars':
         # Bit of a mess... Fetch each variable name.

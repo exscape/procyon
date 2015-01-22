@@ -12,8 +12,8 @@ import re
 import readline
 
 def usage():
-    print(""" Procyon interpreter.
-Usage: {} <file.pr>""".format(sys.argv[0]), file=sys.stderr)
+    print("""Procyon interpreter version {}
+Usage: {} <file.pr>""".format(VERSION, sys.argv[0]), file=sys.stderr)
 
 def read_file(filename):
     """ Read a file. The caller is responsible for handling exceptions. """
