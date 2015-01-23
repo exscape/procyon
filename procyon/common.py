@@ -3,7 +3,7 @@
 # Minor stuff that is shared by various modules is stored here.
 
 VERSION = '0.14a'
-DATE = '2015-01-21'
+DATE = '2015-01-23'
 DEBUGPARSE = 0
 
 class ProcyonException(Exception):

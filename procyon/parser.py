@@ -13,11 +13,35 @@ from .common import ProcyonSyntaxError
 # Operator associativity and precedence rules
 # From lowest to highest precedence.
 # These are similar to C, but not identical (a > b > c is more useful here than in C).
+#
+# CHAINCOMP is used to resolve/silence 6 practically identical shift-reduce conflicts,
+# one per comparison operator.
+# When the parser sees "a > b >= c", it first parses "a > b" and reduces that to
+# a comp (comparison), but when it then sees another comparison operator following that,
+# it doesn't know whether to further reduce that "a > b" to an exp (expression), or
+# to shift the >= and reduce later, as there are rules for *both* exp >= exp and
+# comp >= exp, and "a > b" is both a valid comp and a valid exp.
+# We *always* want it to shift, as it does by default, but I felt that making this
+# explicit, to silence the warnings, might be nice.
+#
+# The reason why adding CHAINCOMP helps is that it has a lower precedence than comparisons,
+# and when PLY sees a lookahead operator with *higher* precedence than the current,
+# it shifts.
+# So this rule gives "a > b" a low precedence, so that the comparison with c has a higher one.
+#
+# This is easy to see with math, where * has higher precedence than +:
+# 1 + 3 . * 4
+# where the dot is where the parser is. * is the current lookahead, and it doesn't know about
+# the 4 at all yet.
+# If it reduces 1+3, the end result is (1+3)*4, which is incorrect.
+# If it shifts, and then shifts the 4, it ends up with 1 + 3 * 4 on the stack,
+# which it can reduce by first by reducing 3 * 4, and then by reducing 1 + (3 * 4).
 precedence = (
     ("nonassoc", "SEMICOLON"),
     ("right", "ASSIGN"),
     ("left", "OROR"),
     ("left", "ANDAND"),
+    ("left", "CHAINCOMP"),  # See note above
     ("left", "EQEQ", "NOTEQ", "LT", "GT", "LE", "GE"),
     ("left", "PLUS", "MINUS"),
     ("left", "TIMES", "DIVIDE", "INTDIVIDE", "REMAINDER"),
@@ -141,8 +165,10 @@ def p_exp_logical(p):
     p[0] = ("logical", p[1], p[2], p[3])
 
 # Comparisons are expressions
+# We want them to have a lower precedence than expressions,
+# see the huge comment above the precedence table.
 def p_exp_comp(p):
-    'exp : comp'
+    'exp : comp %prec CHAINCOMP'
     p[0] = p[1]
 
 # Handle all integer types
