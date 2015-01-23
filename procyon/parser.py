@@ -210,8 +210,8 @@ def p_optargs_args(p):
 
 # Function arguments
 def p_args_many(p):
-    'args : exp COMMA args'
-    p[0] = [p[1]] + p[3]
+    'args : args COMMA exp'
+    p[0] = p[1] + [p[3]]
 
 # Function arguments
 def p_args_one(p):
