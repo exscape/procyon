@@ -16,13 +16,19 @@ def test_functions():
     prog = "func sqr(x) { return x*x } sqr(-1); sqr(0); sqr(2); sqr(-4); sqr(10)"
     assert ev(prog)[-5:] == [1, 0, 4, 16, 100]
 
-def test_function_args():
+def test_function_args(capsys):
     prog = "func zero() { return 0; } zero();"
     assert ev(prog)[-1] == 0
     prog = "func one(x) { return x; } one(1);"
     assert ev(prog)[-1] == 1
-    prog = "func two(x,y) { return x + y; } two(1,2);"
-    assert ev(prog)[-1] == 3
+
+    prog = "func two(x,y) { print(x,y); } two(1,2);"
+    ev(prog)
+    assert capsys.readouterr()[0] == "1 2\n"
+
+    prog = "func three(x,y,z) { print(x,y,z); } three(1,2,3);"
+    ev(prog)
+    assert capsys.readouterr()[0] == "1 2 3\n"
 
 def test_function_wrong_args():
     prog = "func one(x) { return x; } one();"
