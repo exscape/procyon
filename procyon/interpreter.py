@@ -370,11 +370,11 @@ def _evaluate_tree(tree, scope):
         new_scope = _new_scope(scope, [], [])
         (cond, then_body, else_body) = tree[1:]
         if _evaluate_tree(cond, scope):  # Use the old scope here!
-            return _evaluate_all(then_body, new_scope)
+            _evaluate_all(then_body, new_scope)
         elif else_body:
-            return _evaluate_all(else_body, new_scope)
-        else:
-            return None
+            _evaluate_all(else_body, new_scope)
+
+        return None
 
     elif kind == "while":
         new_scope = _new_scope(scope, [], [])

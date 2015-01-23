@@ -198,6 +198,96 @@ def test_if_scope_fail():
         ev(prog)
 
 #
+# Test if/else if/else blocks
+#
+
+def test_if_else_if_1(capsys):
+    prog = """
+    a = 0; b = 1;
+    if a { print("a"); } else if b { print("b"); }
+    """
+    ev(prog)
+    assert capsys.readouterr()[0] == "b\n"
+
+def test_if_else_if_2(capsys):
+    prog = """
+    a = 0; b = 0;
+    if a { print("a"); } else if b { print("b"); }
+    print(".");
+    """
+    ev(prog)
+    assert capsys.readouterr()[0] == ".\n"
+
+def test_if_else_if_3(capsys):
+    prog = """
+    a = 0; b = 1;
+    if a { print("a"); } else if b { print("b"); } else { print("neither"); }
+    """
+    ev(prog)
+    assert capsys.readouterr()[0] == "b\n"
+
+def test_if_else_if_4(capsys):
+    prog = """
+    a = 0; b = 0;
+    if a { print("a"); } else if b { print("b"); } else { print("neither"); }
+    """
+    ev(prog)
+    assert capsys.readouterr()[0] == "neither\n"
+
+def test_if_else_if_5(capsys):
+    prog = """
+    a = 2^4; b = 0;
+    if a { print("a"); } else if b { print("b"); } else { print("neither"); }
+    """
+    ev(prog)
+    assert capsys.readouterr()[0] == "a\n"
+
+def test_if_else_if_6(capsys):
+    prog = """
+    func f(x, y) {
+        if x > y { print ("x>y"); }
+        else if x + 3 < y { print ("x+3<y"); }
+        else if x^2 > y { print ("x^2>y"); }
+        else { print ("neither"); }
+    }
+    f(10,9);  # x>y
+    f(10,11); # x^2>y
+    f(20,15); # x>y
+    f(0,1);   # neither
+    f(19,23); # x+3<y
+    """
+    ev(prog)
+    assert capsys.readouterr()[0] == "x>y\n" "x^2>y\n" "x>y\n" "neither\n" "x+3<y\n"
+
+def test_if_else_if_7():
+    prog = """
+    func f(x,y) {
+        if x > y {
+            if x > 10 { return 1; }
+            else if x > 8 { return 2; }
+            else if x > 6 { return 3;}
+            else { return 4; }
+        }
+        else if y > x {
+            if y > 10 { return 5; }
+            else if y > 8 { return 6; }
+            else { return 7; }
+        }
+        else {
+            return 8;
+        }
+    }
+    f(12,0);
+    f(9,0);
+    f(7,0);
+    f(5,0);
+    f(0,12);
+    f(0,9);
+    f(0,7);
+    f(10,10);
+    """
+    assert ev(prog)[-8:] == [1, 2, 3, 4, 5, 6, 7, 8]
+#
 # Test while loops
 #
 

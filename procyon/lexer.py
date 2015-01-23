@@ -24,7 +24,7 @@ tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals
           'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',         # Comparison operators
           'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'SEMICOLON', 'COMMA',
           'ASSIGN',
-          'IDENT', 'STRING'] + [k.upper() for k in keywords]
+          'IDENT', 'STRING', 'ELSEIF'] + [k.upper() for k in keywords]
 
 # Matches e.g. 1., 1.4, 2.3e2 (230), 4e-3 (0.004)
 def t_FLOAT(t):
@@ -50,6 +50,15 @@ def t_HEX(t):
 def t_INT(t):
     r'\d+'
     t.value = int(t.value)
+    return t
+
+# This MUST be located above IDENT, or it will be lexed as two separate
+# IDENTs, "else" and "if"! This must be a single token, to simplify the parser's work.
+# Combined with requiring braces around if/else blocks, this should eliminate
+# all ambiguities (such as the "dangling else" problem).
+def t_ELSEIF(t):
+    r'else\ if'
+    t.type = "ELSEIF"
     return t
 
 def t_IDENT(t):

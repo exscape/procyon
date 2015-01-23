@@ -250,13 +250,63 @@ def p_block(p):
 ### SINGLE STATEMENTS
 ##
 
-def p_statement_if(p):
-    'block_statement : IF exp block'
-    p[0] = ('if', p[2], p[3], None)
+def p_statement_if_if_else(p):
+    '''block_statement : IF exp block else_if_blocks ELSE block
+                       | IF exp block else_if_blocks'''
 
-def p_statement_if_else(p):
-    'block_statement : IF exp block ELSE block'
-    p[0] = ('if', p[2], p[3], p[5])
+    def to_tree(elseifs, neither_body):
+        """ Create a nested if-else tree from a list of else_if_blocks.
+
+        For example: the p_else_if_blocks_* rules together build up a list, such that this:
+
+        if a { a_body }
+        else if b { b_body }
+        else if c { c_body }
+        else { neither_body }
+
+        ... which is lexed and partially parsed to this:
+
+        IF exp LBRACE statements RBRACE
+        ELSEIF exp LBRACE statements RBRACE
+        ELSEIF exp LBRACE statements RBRACE
+        ELSE LBRACE statements RBRACE
+
+        ... becomes this simple list:
+        [('b', 'b_body'), ('c', 'c_body')]
+
+        This function takes that, combined with neither_body, and eventually returns this:
+        ("if", b, b_body, ("if", c, c_body, neither_body))
+
+        Finally, that is added to the "else" position of the partial parse tree, in the
+        parent of this function.
+        """
+
+        if len(elseifs) == 0:
+            return neither_body
+        else:
+            return [tuple(("if", elseifs[0][0], elseifs[0][1], to_tree(elseifs[1:], neither_body)))]
+
+    # If this fails, there simply was no final "else { }" block, in which case
+    # we WANT last_else_block to be None.
+    last_else_block = None
+    try:
+        last_else_block = p[6]
+    except:
+        pass
+
+    else_ifs = to_tree(p[4], last_else_block)
+    p[0] = ('if', p[2], p[3], else_ifs)  # exp, block and the processed else_if_blocks
+
+# These two rules together give us, for "else if b { b_body } else if c { c_body }":
+# [(b, b_body), (c, c_body)]
+# That list is then used in the if statement rules above.
+def p_else_if_blocks_multiple(p):
+    'else_if_blocks : else_if_blocks ELSEIF exp block'
+    p[0] = p[1] + [(p[3], p[4])]
+
+def p_else_if_blocks_none(p):
+    'else_if_blocks :'
+    p[0] = []
 
 def p_statement_while(p):
     'block_statement : WHILE exp block'
