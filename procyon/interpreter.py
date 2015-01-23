@@ -436,7 +436,7 @@ def _evaluate_function(func, args, scope):
     if len(args) != len(params):
         raise ProcyonTypeError(
             'attempted to call {}() with {} argument{}, exactly {} required'.format(
-                "s" if len(args) == 1 else "", name, len(args), len(params)))
+                name, len(args), "s" if len(args) != 1 else "", len(params)))
 
     # Evaluate arguments in the *calling* scope!
     args = [_evaluate_tree(a, scope) for a in args]
