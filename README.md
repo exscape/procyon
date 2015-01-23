@@ -17,12 +17,12 @@ Now, with that said...
 * REPL with readline support for easy testing and evaluation.
 * Uses integer math wherever possible, automatically resorts to float if necessary.
     The result of 6/2 is an int, 3, while the result of 5/2 is a float, 2.5.
-    Use trunc(5/2) for C-style integer division.
+    Use the // operator for C-style integer division: 5//2 == 2
 * Proper types are still not implemented, however; the above is really the result of Python's type system. Procyon's type system is essentially limited to testing and reporting errors for e.g. subtraction between strings, or addition between numbers and strings.
 * Unlimited integer sizes (floats are limited precision, though!)
 * Built-in math functions (sqrt, trigonometric functions, abs, round etc.; see .help in the REPL
       for an automatically-updated list)
-* if, if/else statements; parenthesis are not required around the test expression, but braces *are* required around the then-body or else-body.
+* if, if/else statements; parenthesis are not required around the test expression, but braces *are* required around the then-body and else-body.
 * while loops, along with break and continue statements. Syntax is otherwise the same as for if statements, regarding parenthesis and braces.
 * Create functions using the "func" keyword. Nested functions are supported, with proper scoping rules.
 
@@ -35,7 +35,7 @@ any time it breaks, I will know).
 * .help command (that is destined to be forever incomplete; listing all language features
       would get old quickly, both for me to write, and for the reader to look through
 * .import command to load function definitions from files (the file is interpreted using the current REPL state)
-* Value of last evaluation is accessible as _ (actually, this is true in the language itself)
+* Value of last evaluation is accessible as _ (in the REPL only)
 
 #### System requirements:
 

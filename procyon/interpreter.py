@@ -132,16 +132,21 @@ __functions = {'sin': 1, 'cos': 1, 'tan': 1,
                'abs': 1, 'sqrt': 1, 'ceil': 1, 'floor': 1,
                'trunc': 1, 'round': 2, 'print': -1, 'abort': 0}
 
-def _init_global_state():
+def _init_global_scope():
     global __global_scope
     __global_scope = (None, __initial_state.copy())
 
 # Built-in constants; there are overwritable by design
 __initial_state = {'e': math.e, 'pi': math.pi}
-_init_global_state()
+_init_global_scope()
 
-def evaluate(s, clear_state=False):
-    """ Evaluate an entire program, in the form of a string. """
+def evaluate(s, clear_state=False, last=None):
+    """ Evaluate an entire program, in the form of a string.
+
+    Keyword arguments:
+    clear_state -- if True, the interpreter state is reset prior to evaluating the program
+    last -- the value to assign to the _ variable throughout the evaluation of the entire program
+    """
 
     if len(s.rstrip()) == 0:
         return None
@@ -164,7 +169,11 @@ def evaluate(s, clear_state=False):
         print("-" * max_len)
 
     if clear_state:
-        _init_global_state()
+        _init_global_scope()
+
+    if last:  # ignore coverage
+        # This is only used in the REPL, which isn't automatically tested.
+        __global_scope[1]['_'] = last
 
     return _evaluate_all(parse_tree, __global_scope)
 
@@ -183,16 +192,7 @@ def evaluate_file(filename, clear_state=False):
 def _evaluate_all(trees, scope):
     """ Evaluate a full set of statements and return a list of results. """
 
-    results = []
-    for tree in trees:
-        result = _evaluate_tree(tree, scope)
-        results.append(result)
-        if result is not None:
-            # TODO: How should _ work? One per scope? Global only?
-            # TODO: Changing in scope c also changes in each parent scope including global?
-            _assign_var(scope, '_', result)
-
-    return results
+    return [_evaluate_tree(tree, scope) for tree in trees]
 
 def _evaluate_tree(tree, scope):
     """ Recursively evaluate a parse tree and return the result. """

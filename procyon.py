@@ -45,6 +45,7 @@ else:
 
 program = None
 success = False
+last_result = None
 while True:
     if filename and program:
         # Ugly, but it works.
@@ -72,7 +73,9 @@ while True:
             continue
         elif filename is None:
             # Save results for the REPL...
-            results = evaluate(program)
+            results = evaluate(program, last=last_result)
+            if len(results) > 0:
+                last_result = results[-1]
         else:
             # ... but not for interpreted files.
             evaluate(program)

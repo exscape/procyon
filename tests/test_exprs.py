@@ -11,7 +11,6 @@ def test_empty():
 
 def test_single():
     assert ev("1") == [1]
-    assert ev_reuse_state("_") == [1]
 
 def test_addition():
     assert ev("1+1") == [2]
@@ -331,10 +330,8 @@ def test_comp_and_or_3():
 def test_variables():
     assert ev("a = 5") == [5]
     assert ev_reuse_state("a == 5") == [1]
-    assert ev_reuse_state("a^3 - 10^2") == [25]
-    assert ev_reuse_state("_") == [25]
-    assert ev_reuse_state("b = (_ - 5)^2") == [400]
-    assert ev_reuse_state("b") == [400]
+    assert ev_reuse_state("b = a^3 - 10^2") == [25]
+    assert ev_reuse_state("c = (b - 5)^2; c") == [400, 400]
 
 def test_builtin_functions():
     assert ev("log10(100)") == [2]
