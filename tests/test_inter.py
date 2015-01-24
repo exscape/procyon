@@ -397,6 +397,54 @@ def test_while_3():
     with pytest.raises(ProcyonSyntaxError):
         ev(prog)
 
+def test_nested_while_1():
+    prog = """
+    a = b = 0;
+    while a < 10 {
+        while b < 5 {
+            b += 1;
+            break if b > 3;
+        }
+        a += 1;
+    }
+    a; b;
+    """
+    assert ev(prog)[-2:] == [10, 5]
+
+def test_nested_while_2():
+    prog = """
+    a = b = 0; enter = 1;
+    while a < 10 {
+        while b < 5 && enter {
+            b += 1;
+            if b >= 3 {
+                enter = 0;
+                break;
+            }
+        }
+        a += 1;
+    }
+    a; b;
+    """
+    assert ev(prog)[-2:] == [10, 3]
+
+def test_nested_while_3():
+    prog = """
+    a = b = c = 0;
+    while a < 10 {
+        while b < 5 {
+            b += 1;
+            if b >= 3 {
+                continue;
+            }
+            c += 1;
+        }
+        a += 1;
+    }
+    a; b; c;
+    """
+    assert ev(prog)[-3:] == [10, 5, 2]
+
 def test_while_scope_fail():
     prog = """
     a = 0;
