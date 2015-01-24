@@ -13,7 +13,7 @@ Now, with that said...
 
 * Syntax resembling C, with inspiration from many other languages such as
     Python (chained comparisons e.g. a > b > c, nested functions, hex/oct/bin numbers, etc.),
-    Rust (paren-less if statements), and others.
+    Rust (paren-less if statements), Perl (postfix if-statements e.g. "f() if a > b;"), and others.
 * REPL with readline support for easy testing and evaluation.
 * Uses integer math wherever possible, automatically resorts to float if necessary.
     The result of 6/2 is an int, 3, while the result of 5/2 is a float, 2.5.

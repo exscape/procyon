@@ -376,6 +376,15 @@ def _evaluate_tree(tree, scope):
 
         return None
 
+    elif kind == "single-if":
+        # f(x) if a > b;
+        # Does NOT create a new scope, and only supports single statements (not blocks).
+        (cond, body) = tree[1:]
+        if _evaluate_tree(cond, scope):
+            _evaluate_tree(body, scope)
+
+        return None
+
     elif kind == "while":
         new_scope = _new_scope(scope, [], [])
         (cond, body) = tree[1:]
@@ -392,6 +401,7 @@ def _evaluate_tree(tree, scope):
                     continue
                 else:
                     raise  # return or abort; this is handled elsewhere
+
         return None
 
     elif kind == "break":

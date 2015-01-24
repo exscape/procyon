@@ -322,6 +322,11 @@ def p_else_if_blocks_none(p):
     'else_if_blocks :'
     p[0] = []
 
+# f(a, b) if x > y;
+def p_single_statement_if(p):
+    'statement : statement IF exp'
+    p[0] = ("single-if", p[3], p[1])
+
 def p_statement_while(p):
     'block_statement : WHILE exp block'
     p[0] = ('while', p[2], p[3])

@@ -287,6 +287,54 @@ def test_if_else_if_7():
     f(10,10);
     """
     assert ev(prog)[-8:] == [1, 2, 3, 4, 5, 6, 7, 8]
+
+def test_single_statement_if_1():
+    prog = """
+    a = 5;
+    b = 0;
+    b += 4 if a > 10;
+    a; b;
+    """
+    assert ev(prog) == [5, 0, None, 5, 0]
+
+# Note the scoping! The single-statement if does NOT introduce
+# a new scope. If it did, it would be far less useful.
+def test_single_statement_if_2():
+    prog = """
+    a = 5;
+    b = 4 if a > 0;  # this is a statement, so it returns None, not 4, despite being true!
+    a; b;
+    """
+    assert ev(prog) == [5, None, 5, 4]
+
+def test_single_statement_if_3():
+    prog = """
+    func fac(n) {
+        return 1 if n < 2;
+        return n * fac(n - 1);
+    }
+    fac(0); fac(1); fac(2); fac(3); fac(4); fac(5);
+    """
+    assert ev(prog)[-6:] == [1, 1, 2, 6, 24, 120]
+
+def test_single_statement_if_fail_1():
+    prog = """
+    a = 10;
+    b = 0;
+    { b += a } if a != 0;  # blocks are not allowed with postfix if
+    """
+    with pytest.raises(ProcyonSyntaxError):
+        ev(prog)
+
+def test_single_statement_if_fail_2():
+    prog = """
+    a = 5;
+    b = 1 if a > 10;
+    a + b;
+    """
+    with pytest.raises(ProcyonNameError):
+        ev(prog)
+
 #
 # Test while loops
 #
