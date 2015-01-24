@@ -23,7 +23,8 @@ tokens = ['INT', 'OCT', 'BIN', 'HEX', 'FLOAT',             # Number literals
           'ANDAND', 'OROR',                                # Logical operators
           'EQEQ', 'NOTEQ', 'LT', 'GT', 'LE', 'GE',         # Comparison operators
           'LPAREN', 'RPAREN', 'LBRACE', 'RBRACE', 'SEMICOLON', 'COMMA',
-          'ASSIGN',
+          'ASSIGN', 'ASSIGN_PLUS', 'ASSIGN_MINUS', 'ASSIGN_TIMES', 'ASSIGN_DIVIDE',
+          'ASSIGN_EXPONENT', 'ASSIGN_REMAINDER', 'ASSIGN_INTDIVIDE',
           'IDENT', 'STRING', 'ELSEIF'] + [k.upper() for k in keywords]
 
 # Matches e.g. 1., 1.4, 2.3e2 (230), 4e-3 (0.004)
@@ -86,6 +87,13 @@ t_INTDIVIDE = r'//'
 t_DIVIDE = r'/'
 t_EXPONENT = r'\^'
 t_REMAINDER = r'%'
+t_ASSIGN_PLUS = r'\+='
+t_ASSIGN_MINUS = r'-='
+t_ASSIGN_TIMES = r'\*='
+t_ASSIGN_INTDIVIDE = r'//='
+t_ASSIGN_DIVIDE = r'/='
+t_ASSIGN_EXPONENT = r'\^='
+t_ASSIGN_REMAINDER = r'%='
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_NOT = r'!'

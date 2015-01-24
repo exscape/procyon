@@ -38,7 +38,8 @@ from .common import ProcyonSyntaxError
 # which it can reduce by first by reducing 3 * 4, and then by reducing 1 + (3 * 4).
 precedence = (
     ("nonassoc", "SEMICOLON"),
-    ("right", "ASSIGN"),
+    ("right", "ASSIGN", "ASSIGN_PLUS", "ASSIGN_MINUS", "ASSIGN_TIMES", "ASSIGN_DIVIDE",
+        "ASSIGN_EXPONENT", "ASSIGN_REMAINDER", "ASSIGN_INTDIVIDE"),
     ("left", "OROR"),
     ("left", "ANDAND"),
     ("left", "CHAINCOMP"),  # See note above
@@ -85,6 +86,19 @@ def p_exp_binop(p):
            | exp REMAINDER exp'''
 
     p[0] = ("binop", p[1], p[2], p[3])
+
+# a += 5 style rules; these are right-associative expressions,
+# such that "a = 2; b = 10; a += b -= 4" sets b = 6 and a = 8.
+# (I would recommend against using such expressions, of course, but they should work.)
+def p_exp_binop_assign(p):
+    '''exp : ident ASSIGN_PLUS exp
+           | ident ASSIGN_MINUS exp
+           | ident ASSIGN_TIMES exp
+           | ident ASSIGN_DIVIDE exp
+           | ident ASSIGN_EXPONENT exp
+           | ident ASSIGN_REMAINDER exp
+           | ident ASSIGN_INTDIVIDE exp'''
+    p[0] = ("assign", p[1], ("binop", p[1], p[2][:-1], p[3]))
 
 # !
 def p_exp_not(p):

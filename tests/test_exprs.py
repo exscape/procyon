@@ -72,6 +72,24 @@ def test_remainder():
     with pytest.raises(ZeroDivisionError):
         ev("10 % 0")
 
+def test_assign_compound_op():
+    assert ev("a = 2; a += 4; a;") == [2, 6, 6]
+    assert ev("b = 6; b -= 4; b;") == [6, 2, 2]
+    assert ev("a = 0; b = 10; a += b -= 3; a; b;") == [0, 10, 7, 7, 7]
+    assert ev("c = 2; c /= 8; c; c *= 4; c;") == [2, 0.25, 0.25, 1, 1]
+    assert ev("func f() { a = 0; if a += 10 > 8 { return 5; } else {return 2; } } f();")[-1] == 5
+    assert ev("func f() { a = 0; b = 10; if a += b -= 5 == 5 { return 1; } else { return 0; } }"
+              "f();")[-1] == 1
+    assert ev("a = 10; b = 5; a %= 3; b += a; a; b") == [10, 5, 1, 6, 1, 6]
+    assert ev("a = 4; a ^= 5; a") == [4, 4**5, 4**5]
+    assert ev("a = 10; a //= 4; a ^= 16 - 3 * 2^2; a") == [10, 2, 16, 16]
+
+def test_assign_compound_fail():
+    with pytest.raises(ProcyonSyntaxError):
+        ev("a =2; a ^= 3 ^= 3")
+    with pytest.raises(ProcyonSyntaxError):
+        ev("5 += 3")
+
 def test_floats():
     # We need to be careful here, since we test equality. 1/10 won't yield exactly 0.1,
     # but 1/8 *will* yield exactly 0.125. We'll have to stick to number that are nice
