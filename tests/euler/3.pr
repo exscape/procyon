@@ -12,15 +12,15 @@ func largest_prime_factor(n) {
 		# Special case for the only even prime, so that we can test
 		# only odd divisors after this, by adding 2 in each loop iteration
 		largest = 2;
-		n = n // 2;
+		n //= 2;
 	}
 
 	while n > 1 {
 		while n % d == 0 {
 			largest = d;
-			n = n // d;
+			n //= d;
 		}
-		d = d + 2;
+		d += 2;
 
 		if d*d > n { # if d > sqrt(n), but a bit faster
 			if n > 1 {

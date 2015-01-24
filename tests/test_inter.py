@@ -158,9 +158,9 @@ def test_if_nested():
     prog = """
     y = 0;
     if x = 2^3 > 7 {
-        y = y + 1;
+        y += 1;
         if x {
-            y = y + 1;
+            y += 1;
         }
         else {
             y = 100;
@@ -295,7 +295,7 @@ def test_while_1():
     prog = """
     a = 0;
     while a < 10 {
-        a = a + 1;
+        a += 1;
     }
     a;
     """
@@ -305,7 +305,7 @@ def test_while_2():
     prog = """
     a = 0;
     while (a > 10) {
-        a = a + 1;
+        a += 1;
     }
     a;
     """
@@ -315,7 +315,7 @@ def test_while_break():
     prog = """
     a = 0;
     while 1 {
-        a = a + 1;
+        a += 1;
         if a >= 10 {
             break;
         }
@@ -329,11 +329,11 @@ def test_while_continue():
     a = 0;
     sum = 0;
     while a < 10 {
-        a = a + 1;
+        a += 1;
         if a % 2 == 0 {
             continue;
         }
-        sum = sum + a;
+        sum += a;
     }
     sum;
     """
@@ -343,7 +343,7 @@ def test_while_3():
     prog = """
     a = 0;
     while (a < 5)
-        a = a + 1;
+        a += 1;
     a;
     """
     with pytest.raises(ProcyonSyntaxError):
@@ -353,7 +353,7 @@ def test_while_scope_fail():
     prog = """
     a = 0;
     while (a < 5) {
-        a = a + 1;
+        a += 1;
         b = 1;
     }
     b;
@@ -504,7 +504,7 @@ def test_return_in_loop():
     func f() {
         a = 0;
         while 1 {
-            a = a + 1;
+            a += 1;
             if a > 10 {
                 return a;
             }
