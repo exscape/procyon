@@ -9,10 +9,10 @@ from procyon.common import *  # Exceptions
 
 import sys
 import re
-import readline
 import glob
 from stat import S_ISDIR
 import os
+from os import _exit
 
 def usage():
     print("""Procyon interpreter version {}, {}
@@ -30,9 +30,9 @@ def read_file(filename):
         with open(filename, 'r') as f:
             program = f.read()
             return program
-    except Exception as e:
+    except (IOError, OSError) as e:
         print("Unable to read file: {}".format(e))
-        sys.exit(1)
+        return None
 
 def complete(text, state):
     """ Custom readline completion function for .import commands. """
@@ -73,30 +73,59 @@ else:
     usage()
     sys.exit(1)
 
-readline.set_completer_delims(' \t\n;')
-readline.parse_and_bind("tab: complete")
-readline.set_completer(complete)
+if not filename:
+    # REPL; set up readline
+    import readline
+    readline.set_completer_delims(' \t\n;')
+    readline.parse_and_bind("tab: complete")
+    readline.set_completer(complete)
 
 program = ""
-keep_going = False
+keep_going = False  # used in the REPL; when set, we read another line as a continuation line
 last_result = None
+
+filetype = "repl"
+if filename:
+    filetype = "arg"
+
+#
+# I'm not at all happy with the mess this loop has become; one goal
+# of this project is to keep the code fairly easy to understand.
+# This loop is written in part by trial and error, at this point.
+#
+# A brief explanation:
+# filetype is set to "arg" when reading a file (procyon file.pr), "repl" most of the time
+# otherwise, and "import" when executing an .import statement in the REPL.
+#
+# "import" is only used until the file has loaded successfully, at which point
+# filetype is reset to "repl" again. When no exception occurs, this happens
+# virtually immediately.
+
 while True:
-    if filename and program:
-        # Ugly, but it works.
-        # Only run the loop once if interpreting a file.
-        # When program is not None, it has already run once.
-        # This way, exception handling can be shared between both ways of using the script.
-        # If the program ran without exceptions, sys.exit(0) is called, so any time we get here,
-        # something should've gone wrong.
-        sys.exit(1)
+    if filetype != "arg" and filename:
+        # Ugly. When importing a file, we set filename, so that it can be displayed
+        # for syntax errors and such. However, we need to unset it again after all exception
+        # handlers have run, to clean the state and return to "REPL input mode", so to speak.
+        filename = None
+
     try:
-        if filename is not None:
+        if filetype == "arg":
+            # This is a file passed as an argument to the interpreter
+            assert filename is not None
             program = read_file(filename)
+            if program is None:
+                _exit(1)
         else:
+            # This is an interactive REPL session
+            filetype = "repl"
+
             try:
                 PROMPT = ">>> "
                 CONT_PROMPT = '... '
                 if keep_going:
+                    # keep_going is set when the input from the previous line(s) is incomplete,
+                    # e.g. "print(1, 2," was entered; the user can then enter the rest on one
+                    # or more upcoming lines.
                     program += "\n" + input(CONT_PROMPT).strip()
                 else:
                     program = input(PROMPT).strip()
@@ -107,14 +136,34 @@ while True:
                 continue
             except EOFError:
                 print("^D")
-                sys.exit(0)
+                _exit(0)
 
         results = None
 
         if filename is None and len(program) > 0 and program[0] == '.':
             # Support commands in the REPL only (filename is None)
-            evaluate_command(program[1:])
+            if re.match(r'^\s*\.import\s+\S', program):
+                # .import is handled here, so that we can re-use the code
+                # for pointing out syntax errors and such.
+                filename = re.split('\s+', program)[1]
+                program = read_file(filename)
+                if program is None:
+                    filename = None
+                    continue
+
+                filetype = "import"
+                evaluate(program)
+
+                # If we get here, the evaluation was successful, so clean up
+                # prior to looping again
+                filetype = "repl"
+                filename = None
+                program = None
+            else:
+                evaluate_command(program[1:])
+
             continue
+
         elif filename is None:
             # Save results for the REPL...
             results = evaluate(program, last=last_result)
@@ -122,10 +171,10 @@ while True:
                 last_result = results[-1]
 
             keep_going = False
-        else:
+        elif filetype == "arg":
             # ... but not for interpreted files.
             evaluate(program)
-            sys.exit(0)
+            _exit(0)
 
         if results is not None and len([r for r in results if r is not None]) > 0:
             print("\n".join([str(r) for r in results if r is not None]))
@@ -149,9 +198,13 @@ while True:
             else:
                 print("Syntax error: {}: {}".format(filename, ex_msg))
 
+        if filetype == "import":
+            filename = None
+            filetype = "repl"
+
     except ProcyonInternalError as e:
         print("BUG:", str(e))
-        sys.exit(1)
+        _exit(1)
     except ProcyonControlFlowException as e:
         keep_going = False
         type = e.args[0]["type"]
@@ -169,6 +222,8 @@ while True:
     except ProcyonTypeError as e:
         keep_going = False
         print("Type error: {}".format(str(e)))
-    except Exception as e:
-        keep_going = False
-        print(str(e))
+    finally:
+        if filename and filetype == "arg":
+            # If we get here, an exception was thrown, or else
+            # we would have exited with status 0 previously.
+            sys.exit(1)
