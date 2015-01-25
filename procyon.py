@@ -44,7 +44,6 @@ else:
     sys.exit(1)
 
 program = None
-success = False
 last_result = None
 while True:
     if filename and program:

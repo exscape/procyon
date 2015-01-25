@@ -97,7 +97,7 @@ def test_string_4(capsys):
     print (s + "hoo\"" + s2);
     """
     assert ev(prog)[-1] is None
-    assert capsys.readouterr()[0] == "Woo-\"hoo\"! \"Escaped\" quotes!\n"
+    assert capsys.readouterr()[0] == """Woo-"hoo"! "Escaped" quotes!\n"""
 
 def test_string_fail_1():
     prog = """ print(4 + "abc"); """
@@ -109,7 +109,6 @@ def test_string_fail_2():
     with pytest.raises(ProcyonTypeError):
         ev(prog)
 
-
 #
 # Test returns (void returns; regular ones are tested in many other places)
 #
@@ -117,7 +116,7 @@ def test_string_fail_2():
 def test_void_return():
     prog = """
     x = 10;
-    func noret(x) { x = x^2; return; }
+    func noret(x) { x = x^2; return; x = x^3;}
     y = noret(x);
     x;
     y;
@@ -157,10 +156,11 @@ def test_if_2():
 def test_if_nested():
     prog = """
     y = 0;
-    if x = 2^3 > 7 {
+    if x = 2^3 > 7 {  # Note: not ==
         y += 1;
         if x {
             y += 1;
+            z = 5;
         }
         else {
             y = 100;
@@ -169,9 +169,9 @@ def test_if_nested():
     else {
         y = 200;
     }
-    y;
+    y; z;
     """
-    assert ev(prog)[-1] == 2
+    assert ev(prog)[-2:] == [2, 5]
 
 def test_if_func():
     prog = """
@@ -185,7 +185,7 @@ def test_if_func():
     """
     assert ev(prog)[-1] == 25
 
-def test_if_scope_fail():
+def test_if_scope():
     prog = """
     func sqr(x) { return x*x; }
     if sqr(10) == 100 {
@@ -194,8 +194,7 @@ def test_if_scope_fail():
     }
     x = p(50);
     """
-    with pytest.raises(ProcyonNameError):
-        ev(prog)
+    assert ev(prog)[-1] == 50
 
 #
 # Test if/else if/else blocks
@@ -297,8 +296,6 @@ def test_single_statement_if_1():
     """
     assert ev(prog) == [5, 0, None, 5, 0]
 
-# Note the scoping! The single-statement if does NOT introduce
-# a new scope. If it did, it would be far less useful.
 def test_single_statement_if_2():
     prog = """
     a = 5;
@@ -445,7 +442,7 @@ def test_nested_while_3():
     """
     assert ev(prog)[-3:] == [10, 5, 2]
 
-def test_while_scope_fail():
+def test_while_scope():
     prog = """
     a = 0;
     while (a < 5) {
@@ -454,8 +451,7 @@ def test_while_scope_fail():
     }
     b;
     """
-    with pytest.raises(ProcyonNameError):
-        ev(prog)
+    assert ev(prog)[-1] == 1
 
 #
 # Test variable scoping
@@ -465,7 +461,7 @@ def test_scoping_1():
     prog = "v = 10; if (v > 5) { v = 15; } v;"
     assert ev(prog)[-1] == 15
     prog = "v = 10; func f() { v = 15; return v; } f(); v;"
-    assert ev(prog)[-2:] == [15, 15]
+    assert ev(prog)[-2:] == [15, 10]
 
 def test_scoping_2():
     prog = "v = 10; func f() { a = 5; return a; } f(); v;"
@@ -489,7 +485,7 @@ def test_scoping_3():
     f(6);
     v;
     """
-    assert ev(prog)[-2:] == [1, 5]
+    assert ev(prog)[-2:] == [1, 10]
 
 def test_scoping_4():
     prog = """
@@ -503,17 +499,16 @@ def test_scoping_4():
     """
     assert ev(prog)[-3:] == [5, 12, 5]
 
-def test_scoping_fail_1():
+def test_scoping_5():
     prog = """
     if (5 > 4) {
         xyz = 10;
     }
-    print(xyz);
+    xyz;
     """
-    with pytest.raises(ProcyonNameError):
-        ev(prog)
+    assert ev(prog)[-1] == 10
 
-def test_scoping_fail_2():
+def test_scoping_fail():
     prog = """
     func test(x, y) {
         if (x >= y) {
@@ -525,6 +520,58 @@ def test_scoping_fail_2():
         return z;
     }
     test(12, 4);
+    z;
+    """
+    with pytest.raises(ProcyonNameError):
+        ev(prog)
+
+def test_scoping_fail_2():
+    prog = "v = 10; func f() { a = 5; return a; } f(); a;"
+    with pytest.raises(ProcyonNameError):
+        ev(prog)
+
+def test_global_vars_1():
+    prog = """
+    if 3 > 2 {
+        x = 10;
+        $y = 5;
+    }
+    x; $y;  # global scope is not necessary here, as if doesn't create a new scope
+    """
+    assert ev(prog)[-2:] == [10, 5]
+
+def test_global_vars_2():
+    prog = """
+    func f() {
+        x = 10;
+        $y = 5;
+    }
+    f();
+    $y;  # it is necessary here, however!
+    """
+    assert ev(prog)[-1] == 5
+
+def test_global_vars_3():
+    prog = """
+    func f(x) {
+        func g(x) {
+            $x = 3;
+            return 2;
+        }
+        return g(x);
+    }
+    f(10); $x;
+    """
+    assert ev(prog)[-2:] == [2, 3]
+
+def test_global_vars_fail():
+    prog = """
+    func f() {
+        x = 10;
+        $y = 5;
+    }
+    f();
+    $myvar;
     """
     with pytest.raises(ProcyonNameError):
         ev(prog)
@@ -535,10 +582,10 @@ def test_scoping_fail_2():
 
 def test_short_circuit_or():
     header = """
-    err = 0;
-    func s() { err = 1; return 1; } # Should never run
+    $err = 0;
+    func s() { $err = 1; return 1; } # Should never run
     """
-    footer = "; err;"
+    footer = "; $err;"
 
     tests = ["1 || s()",
              "0 || 1 || s()",
@@ -547,14 +594,14 @@ def test_short_circuit_or():
              "!(5 > 4 >= 10) || s()"]
     for test in tests:
         prog = header + test + footer
-        assert ev(prog)[-1] == 0  # Test that err == 0
+        assert ev(prog)[-1] == 0  # Test that $err == 0
 
 def test_short_circuit_and():
     header = """
-    err = 0;
-    func s() { err = 1; return 1; } # Should never run
+    $err = 0;
+    func s() { $err = 1; return 1; } # Should never run
     """
-    footer = "; err;"
+    footer = "; $err;"
 
     tests = ["0 && s()",
              "1 && 0 && s()",
@@ -563,14 +610,14 @@ def test_short_circuit_and():
              "(0 && s()) && s()"]
     for test in tests:
         prog = header + test + footer
-        assert ev(prog)[-1] == 0  # Test that err == 0
+        assert ev(prog)[-1] == 0  # Test that $err == 0
 
 def test_short_circuit_misc():
     header = """
-    err = 1;
-    func s() { err = 0; return 1; } # Should ALWAYS run
+    $err = 1;
+    func s() { $err = 0; return 1; } # Should ALWAYS run
     """
-    footer = "; err;"
+    footer = "; $err;"
 
     tests = ["1 && 2 && s() && 0",
              "0 || 1 && s() && 2",
@@ -580,7 +627,7 @@ def test_short_circuit_misc():
              "(0 || s()) && 1"]
     for test in tests:
         prog = header + test + footer
-        assert ev(prog)[-1] == 0  # Test that err == 0
+        assert ev(prog)[-1] == 0  # Test that $err == 0
 
 #
 # Miscellaneous tests

@@ -8,7 +8,6 @@
 # so I figured: why not write a few tests that I've actually written for real
 # in other languages?
 # That way, I also get an idea of what language features are most urgent to add.
-# (Right now, not having += and related operators is reasonably annoying!)
 #
 
 import pytest

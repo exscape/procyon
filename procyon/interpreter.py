@@ -4,10 +4,8 @@
 
 import math
 import sys
-import re
-import codecs
 from ply import lex, yacc
-from .common import *  # VERSION, DATE and exceptions, mostly
+from .common import *  # decode_escapes, VERSION, DATE and exceptions, mostly
 import procyon.lexer as lexer
 import procyon.parser as parser
 
@@ -18,41 +16,69 @@ __all__ = ['evaluate', 'evaluate_command', 'evaluate_file']
 # then interprets the syntax tree.
 #
 
-# A scope is written as a tuple, (parent_scope, {'name': val, 'name2': val2, ...})
+# (A Brief History of) Scoping rules in Procyon
+#
+# Originally, just as functions and if-statements were added, the scoping rules were quite simple:
+# A new scope was created for each set of braces, whether they were for a function, a conditional,
+# or a loop.
+# When reading a variable, the local scope was checked first. If it was not present there,
+# the outer scope was checked. If not there, either, the next outer scope was checked, and so on,
+# until the global scope had been checked unsuccessfully, at which point a NameError was raised.
+#
+# For writing, a similar approach was used. If the variable existed in the local scope, that one
+# was used. If not, outer scopes were checked recursively. If it didn't exist in any of those,
+# one was created in the local scope.
+#
+# This turned out to be problematic. Most notably, using a variable (such as "i" for a loop counter)
+# inside a function *and* in the main program (i.e. in the global scope) had unintended
+# consequences, since calling a function that modifies "i" inside a loop will alter the local
+# loop variable as well, often causing infinite looping.
+#
+# A better approach was required. Simply requiring a keyword/sigil to access non-local scopes
+# sounds fairly good, until one realizes that if-statements are scopes, so it would be impossible
+# to change a variable inside an if-statement; it'd only change inside that if block... unless
+# all variables used such sigils, meaning ALL variables are globals.
+#
+# I chose to solve this similarly to how Python works -- after embarrasingly realize I didn't
+# understand Python scoping rules prior to now. The following code DOES work in Python:
+#
+# if something:
+#     x = 1
+# print(x)
+#
+# ... even if that is the entire program. I would have expected, and have always coded as if,
+# that would yield a NameError from the x only existing in the if scope -- but it turns out
+# if-statements do not CREATE new scopes... so I chose a similar behavior for Procyon.
+#
+# The language works like this:
+# When reading a variable, the local (i.e. closest function) scope is tested first.
+# If not present there, the outer scope is checked, and so on, until we reach the outermost
+# scope (the global scope). If not found in any of those, a ProcyonNameError is raised.
+# So far, so good. This makes nested functions work properly, without any hacks.
+#
+# When assigning, the rules are different. If the variable already exists in the local scope, that
+# one is used. If not, a new variable is created in the local scope. Outer scopes are never
+# checked, and never written to, so that function cannot accidentally affect other functions or
+# the global scope.
+#
+# Sometimes it may be desirable to use global variables. In that case, we can use a special
+# keyword or sigil to denote it as such (as Python uses "global" and Ruby uses the $ sigil).
+# Such a variable is denoted by a $ sigil in Procyon; they can be read (and written) from ANY scope,
+# and ignore all scoping rules.
+# For example, they can be defined inside a block itself inside a nested function), yet be accessed
+# from the global scope, as long as the access from the global scope occurs later in the
+# interpretation process.
+
+# A scope is written as a tuple, (outer/parent scope, {'name': val, 'name2': val2, ...})
 # The global scope has None as its parent.
 
-def decode_escapes(s):
-    r""" Handle escape sequences in strings.
-
-         On a basic level, this allows for \n to mean newline and so on, but
-         it does encompass more.
-         Code from: http://stackoverflow.com/a/24519338/1668576
-    """
-
-    if type(s) is not str:
-        return s
-
-    ESCAPE_SEQUENCE_RE = re.compile(r'''
-        ( \\U........      # 8-digit hex escapes
-        | \\u....          # 4-digit hex escapes
-        | \\x..            # 2-digit hex escapes
-        | \\[0-7]{1,3}     # Octal escapes
-        | \\N\{[^}]+\}     # Unicode characters by name
-        | \\[\\'"abfnrtv]  # Single-character escapes
-        )''', re.UNICODE | re.VERBOSE)
-
-    def decode_match(match):
-        return codecs.decode(match.group(0), 'unicode-escape')
-
-    return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
-
 def _new_scope(cur_scope, vars, values):
-    """ Create a new scope, for e.g. a function or if statement. """
+    """ Create a new scope, for e.g. a function. """
     assert len(vars) == len(values)
     return (cur_scope, {k: v for k, v in zip(vars, values)})
 
 def _var_exists(scope, var):
-    """ Test if a variable exists in a given scope, or any parent/grandparent scope. """
+    """ Test if a variable exists in a given scope, or (recursively) in any outer scope. """
     try:
         _read_var(scope, var)
     except ProcyonNameError:
@@ -61,59 +87,52 @@ def _var_exists(scope, var):
     return True
 
 def _read_var(scope, var):
-    """ Look for a variable in the current scope.
+    """ Look for a variable in the current scope, and if found, return its value.
 
-        If it doesn't exist, look in the parent scope,
-        then the grandparent scope etc.
-        If not found even in the grandparent scope,
-        we raise an exception.
+        If it doesn't exist, look in the outer scope, then the next outer scope,
+        and so on. If not found even in the global scope, we raise an exception.
+
+        Variables that begin with a $ are globals, and are treated differently:
+        they are simply stored in the global scope.
     """
 
-    try:
-        # Try this scope first...
-        return scope[1][var]
-    except KeyError:
-        # Well, that didn't work. What about the parent scope?
-        if scope[0] is not None:
-            # There is a parent scope, so let's try that.
-            return _read_var(scope[0], var)
-        else:
-            # There is no parent scope, and we still haven't found it. Give up.
-            raise ProcyonNameError('unknown identifier \"{}\"'.format(var))
+    if var[0] == '$':
+        try:
+            return __global_scope[1][var]
+        except KeyError:
+            raise ProcyonNameError('unknown identifier "{}"'.format(var))
+    else:
+        try:
+            # Try this scope first...
+            return scope[1][var]
+        except KeyError:
+            # Well, that didn't work. What about the outer/parent scope?
+            if scope[0] is not None:
+                # There is a parent scope, so let's try that.
+                return _read_var(scope[0], var)
+            else:
+                # There is no parent scope, and we still haven't found it. Give up.
+                raise ProcyonNameError('unknown identifier "{}"'.format(var))
 
 def _assign_var(scope, var, value):
     """ Set a variable in a given scope. Returns the value that was assigned.
 
-        Note that if the variable exists in a parent/grandparent scope, that variable
-        is used. There is no local shadowing.
+        If the same variable exists in an outer (parent/grandparent/...) scope,
+        that one is shadowed by the local one! Only global variables ($name)
+        can modify values in outside scopes.
+
+        Global variables are stored in the global scope, regardless of where
+        the assignment happens (e.g. an assignment from inside a nested function
+        can be later accessed by the global scope).
     """
     assert type(var) is str
 
-    if var in scope[1]:
-        # First, if the var exists in the local scope, use that.
-        scope[1][var] = value
-        return value
-    elif scope[0] is not None and _var_exists(scope[0], var):
-        # If it exists in some parent scope, use that var instead.
-        var_scope = _scope_of_var(var, scope[0])
-        assert var_scope is not None
-        var_scope[1][var] = value
+    if var[0] == '$':
+        __global_scope[1][var] = value
         return value
     else:
-        # It didn't exist there, either. Create a new var in the local scope.
         scope[1][var] = value
         return value
-
-def _scope_of_var(var, scope):
-    """ Return the closest scope that contains the given variable, if any. """
-
-    if var in scope[1]:
-        # If we have this var, just return ourselves.
-        return scope
-    elif scope[0] is not None:
-        return _scope_of_var(var, scope[0])
-    else:  # ignore coverage
-        return None
 
 # def _print_all_vars(scope):
 #     """ Print all variables in all scopes; first this one, then the parent, etc. """
@@ -136,7 +155,7 @@ def _init_global_scope():
     global __global_scope
     __global_scope = (None, __initial_state.copy())
 
-# Built-in constants; there are overwritable by design
+# Built-in constants; these are overwritable by design
 __initial_state = {'e': math.e, 'pi': math.pi}
 _init_global_scope()
 
@@ -281,7 +300,7 @@ def _evaluate_tree(tree, scope):
                 return int(left <= right)
             elif op == '>=':
                 return int(left >= right)
-            else:  # ignore coverage
+            else:
                 raise ProcyonInternalError("unknown operator in comp_one")
 
         comparisons = tree[1]
@@ -367,30 +386,22 @@ def _evaluate_tree(tree, scope):
             return func(*args)
 
     elif kind == "if":
-        new_scope = _new_scope(scope, [], [])
+        # NOTE: if statements (and loops) do NOT create new scopes.
+        # The closest function's scope is used, so creating a variable
+        # inside an if block and later using it outside is fine.
         (cond, then_body, else_body) = tree[1:]
-        if _evaluate_tree(cond, scope):  # Use the old scope here!
-            _evaluate_all(then_body, new_scope)
-        elif else_body:
-            _evaluate_all(else_body, new_scope)
-
-        return None
-
-    elif kind == "single-if":
-        # f(x) if a > b;
-        # Does NOT create a new scope, and only supports single statements (not blocks).
-        (cond, body) = tree[1:]
         if _evaluate_tree(cond, scope):
-            _evaluate_tree(body, scope)
+            _evaluate_all(then_body, scope)
+        elif else_body:
+            _evaluate_all(else_body, scope)
 
         return None
 
     elif kind == "while":
-        new_scope = _new_scope(scope, [], [])
         (cond, body) = tree[1:]
-        while _evaluate_tree(cond, scope):  # Use the old scope here!
+        while _evaluate_tree(cond, scope):
             try:
-                _evaluate_all(body, new_scope)
+                _evaluate_all(body, scope)
             except ProcyonControlFlowException as ex:
                 # I'd like to call this variable "type", but that didn't work out too well...
                 # (Python's type() function stopped working elsewhere :-)
@@ -416,7 +427,6 @@ def _evaluate_tree(tree, scope):
 
         name = tree[1][1]
         (params, body) = tree[2:]
-
         _assign_var(scope, name, ("func", name, params, body))
 
         return None
@@ -429,7 +439,7 @@ def _evaluate_tree(tree, scope):
             raise ProcyonControlFlowException({"type": "return", "value": None})
 
     raise ProcyonInternalError('reached end of _evaluate_tree! kind={}, tree: {}'.format(
-        kind, tree))  # ignore coverage
+        kind, tree))
 
 # Executes a user-defined function
 # Note: "args" refers to the arguments the function is passed,
@@ -451,14 +461,8 @@ def _evaluate_function(func, args, scope):
     # Evaluate arguments in the *calling* scope!
     args = [_evaluate_tree(a, scope) for a in args]
 
-    # print("...(", end="")
-    # for i in range(len(args)):
-    #     print("{}={}".format(params[i], args[i]), end = ", " if len(args) > i+1 else "")
-    # print(")")
-
-    func_scope = _new_scope(scope, params, args)
-
     try:
+        func_scope = _new_scope(scope, params, args)
         _evaluate_all(body, func_scope)
     except ProcyonControlFlowException as ex:
         args = ex.args[0]
@@ -488,14 +492,9 @@ def evaluate_command(cmd):  # ignore coverage
 
         for var in sorted(vars):
             print("{}:\t{}".format(var, __global_scope[1][var]))
+
     elif cmd_name == 'help':
         print("# Procyon REPL v" + VERSION + ", " + DATE)
-        print("# Supported operators: + - * / // ^ % ( ) = == != < > >= <= && ||")
-        print("# Comments begin with a hash sign, as these lines do.")
-        print("# = assigns, == tests equality (!= tests non-equality), e.g.:")
-        print("# a = 5")
-        print("# a == 5 # returns 1 (true)")
-        print("#")
         print("# Supported commands (in the REPL only):")
         print("# .help - this text")
         print("# .vars - show all variables, except non-modified builtins")
@@ -507,13 +506,15 @@ def evaluate_command(cmd):  # ignore coverage
         print("#")
         print("# Built-in constants (names are re-assignable):")
         print("# " + ", ".join(sorted(__initial_state)))
-        print("# Use _ to access the last result, e.g. 12 + 2 ; _ + 1 == 15 # returns True")
+        print("# Use _ to access the last result.")
         print("# Use 0x1af, 0o175, 0b11001 etc. to specify hexadecimal/octal/binary numbers.")
         print("# See README.md for more information.")
+
     elif cmd_name == 'import':
         if len(args) == 1:
             evaluate_file(args[0])
         else:
             print("Usage: .import <file.py>")
+
     else:
         raise ProcyonNameError("unknown command {}".format(cmd_name))

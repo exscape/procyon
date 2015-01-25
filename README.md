@@ -13,7 +13,8 @@ Now, with that said...
 
 * Syntax resembling C, with inspiration from many other languages such as
     Python (chained comparisons e.g. a > b > c, nested functions, hex/oct/bin numbers, etc.),
-    Rust (paren-less if statements), Perl (postfix if-statements e.g. "f() if a > b;"), and others.
+    Rust (paren-less if/while statements), Perl (postfix if-statements e.g. "f() if a > b;"),
+	Ruby ($ for global variables), and probably still others.
 * REPL with readline support for easy testing and evaluation.
 * Uses integer math wherever possible, automatically resorts to float if necessary.
     The result of 6/2 is an int, 3, while the result of 5/2 is a float, 2.5.
@@ -26,8 +27,7 @@ Now, with that said...
 * while loops, along with break and continue statements. Syntax is otherwise the same as for if statements, regarding parenthesis and braces.
 * Create functions using the "func" keyword. Nested functions are supported, with proper scoping rules.
 
-Have a look under tests/euler to see some example code that is guaranteed to be up to date (it is automatically tested, so
-any time it breaks, I will know).
+Have a look under tests/euler to see some example code that is guaranteed to be up to date (it is automatically tested, so any time it breaks, I will know).
 
 #### REPL features:
 

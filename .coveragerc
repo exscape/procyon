@@ -5,6 +5,6 @@ branch = True
 exclude_lines =
 	ignore coverage
 	if DEBUGPARSE
-	raise RuntimeError
+	raise ProcyonInternalError
 
 show_missing = True

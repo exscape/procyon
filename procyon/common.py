@@ -2,8 +2,11 @@
 
 # Minor stuff that is shared by various modules is stored here.
 
-VERSION = '0.14a'
-DATE = '2015-01-23'
+import re
+import codecs
+
+VERSION = '0.15a'
+DATE = '2015-01-25'
 DEBUGPARSE = 0
 
 class ProcyonException(Exception):
@@ -38,3 +41,28 @@ class ProcyonControlFlowException(ProcyonException):
     also a key named "value" holding the function's return value.
     """
     pass
+
+def decode_escapes(s):
+    r""" Handle escape sequences in strings.
+
+         On a basic level, this allows for \n to mean newline and so on, but
+         it does encompass more.
+         Code from: http://stackoverflow.com/a/24519338/1668576
+    """
+
+    if type(s) is not str:
+        return s
+
+    ESCAPE_SEQUENCE_RE = re.compile(r'''
+        ( \\U........      # 8-digit hex escapes
+        | \\u....          # 4-digit hex escapes
+        | \\x..            # 2-digit hex escapes
+        | \\[0-7]{1,3}     # Octal escapes
+        | \\N\{[^}]+\}     # Unicode characters by name
+        | \\[\\'"abfnrtv]  # Single-character escapes
+        )''', re.UNICODE | re.VERBOSE)
+
+    def decode_match(match):
+        return codecs.decode(match.group(0), 'unicode-escape')
+
+    return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
