@@ -426,6 +426,10 @@ def _evaluate_tree(tree, scope):
         # a name in the local scope.
 
         name = tree[1][1]
+
+        if name in __functions:
+            raise ProcyonTypeError('cannot ovewrite built-in function "{}"'.format(name))
+
         (params, body) = tree[2:]
         _assign_var(scope, name, ("func", name, params, body))
 

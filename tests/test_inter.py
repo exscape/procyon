@@ -64,6 +64,23 @@ def test_nested_functions_fail():
     with pytest.raises(ProcyonNameError):
         ev(prog)
 
+def test_function_overwrite():
+    prog = """
+    func f() { return 10; }
+    f();
+    func f() { return 20; }
+    f()
+    """
+    assert ev(prog) == [None, 10, None, 20]
+
+def test_function_overwrite_fail():
+    prog = """
+    func sin(x){ return 10; }
+    sin(0);
+    """
+    with pytest.raises(ProcyonTypeError):
+        ev(prog)
+
 #
 # Test strings
 #
