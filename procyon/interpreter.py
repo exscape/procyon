@@ -225,7 +225,7 @@ def _evaluate_tree(tree, scope):
 
         if type(left) != type(right) and not (
                 type(left) in (int, float) and type(right) in (int, float)):
-            raise ProcyonTypeError("binary operation on expressions of different types:"
+            raise ProcyonTypeError("binary operation on expressions of different types: "
                                    "{} {} {}".format(left, op, right))
 
         if type(left) is str and type(right) is str and op != '+':

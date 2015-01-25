@@ -44,7 +44,8 @@ else:
     usage()
     sys.exit(1)
 
-program = None
+program = ""
+keep_going = False
 last_result = None
 while True:
     if filename and program:
@@ -60,10 +61,19 @@ while True:
                 program = read_file(filename)
         else:
             try:
-                PROMPT = '>>> '
-                program = input(PROMPT).strip()
-            except (KeyboardInterrupt, EOFError):
-                print("")
+                PROMPT = ">>> "
+                CONT_PROMPT = '... '
+                if keep_going:
+                    program += "\n" + input(CONT_PROMPT).strip()
+                else:
+                    program = input(PROMPT).strip()
+            except KeyboardInterrupt:
+                print("^C")
+                keep_going = False
+                program = None
+                continue
+            except EOFError:
+                print("^D")
                 sys.exit(0)
 
         results = None
@@ -74,8 +84,10 @@ while True:
         elif filename is None:
             # Save results for the REPL...
             results = evaluate(program, last=last_result)
-            if len(results) > 0:
+            if results:
                 last_result = results[-1]
+
+            keep_going = False
         else:
             # ... but not for interpreted files.
             evaluate(program)
@@ -86,6 +98,7 @@ while True:
 
     except ProcyonSyntaxError as e:
         (lineno, pos, ex_msg) = e.args[0]
+        keep_going = False
 
         if lineno > 0 and pos > 0:
             line = program.split('\n')[lineno-1]
@@ -93,14 +106,20 @@ while True:
             print("Syntax error: {} at {}:{}:{}".format(
                 ex_msg, filename if filename else "<repl>", lineno, pos))
         else:
-            # If the error is "unexpetced end of input", the above variables will be -1,
-            # and there's no use in printing either of them.
-            print("Syntax error: {}: {}".format(filename if filename else "<repl>", ex_msg))
+            # This was an "unexpected end of input" error.
+            # In case this happened in the REPL (filename is None),
+            # the user might want to keep typing, so let's let them.
+            if filename is None:
+                keep_going = True
+                continue
+            else:
+                print("Syntax error: {}: {}".format(filename, ex_msg))
 
     except ProcyonInternalError as e:
         print("BUG:", str(e))
         sys.exit(1)
     except ProcyonControlFlowException as e:
+        keep_going = False
         type = e.args[0]["type"]
         if type == "abort":
             print("abort() called")
@@ -108,10 +127,14 @@ while True:
             print("Error: {} called outside of a {}".format(
                 type, "function" if type == "return" else "loop"))
     except ProcyonNameError as e:
+        keep_going = False
         print("Name error: {}".format(str(e)))
     except OverflowError:
+        keep_going = False
         print("Overflow: result is out of range")
     except ProcyonTypeError as e:
+        keep_going = False
         print("Type error: {}".format(str(e)))
     except Exception as e:
+        keep_going = False
         print(str(e))
