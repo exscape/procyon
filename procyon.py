@@ -10,6 +10,9 @@ from procyon.common import *  # Exceptions
 import sys
 import re
 import readline
+import glob
+from stat import S_ISDIR
+import os
 
 def usage():
     print("""Procyon interpreter version {}, {}
@@ -31,6 +34,32 @@ def read_file(filename):
         print("Unable to read file: {}".format(e))
         sys.exit(1)
 
+def complete(text, state):
+    """ Custom readline completion function for .import commands. """
+
+    def append_slash(f):
+        """ Add a slash to the end of directory names. """
+        if S_ISDIR(os.stat(f).st_mode):
+            return f + "/"
+        else:
+            return f
+
+    line = readline.get_line_buffer()
+
+    # If we're not importing, do not tab complete.
+    # Attempt to simply insert a tab instead, for indentation.
+    if not re.match(r'^\s*\.import\s', line):
+        text = "" if re.match("^\s*$", text) else text
+        return [text + "\t", None][state]
+
+    # Grab a list of all relevant files, add slashes if they're directories,
+    # and append the None so that readline knows when to stop calling us.
+    text = os.path.expanduser(text)  # expand ~
+    files = glob.glob(text + '*')
+    files = [append_slash(f) for f in files]
+    files.append(None)
+    return files[state]
+
 filename = None
 
 if len(sys.argv) == 1:
@@ -43,6 +72,10 @@ else:
     # Invalid command line
     usage()
     sys.exit(1)
+
+readline.set_completer_delims(' \t\n;')
+readline.parse_and_bind("tab: complete")
+readline.set_completer(complete)
 
 program = ""
 keep_going = False
@@ -58,7 +91,7 @@ while True:
         sys.exit(1)
     try:
         if filename is not None:
-                program = read_file(filename)
+            program = read_file(filename)
         else:
             try:
                 PROMPT = ">>> "
@@ -77,6 +110,7 @@ while True:
                 sys.exit(0)
 
         results = None
+
         if filename is None and len(program) > 0 and program[0] == '.':
             # Support commands in the REPL only (filename is None)
             evaluate_command(program[1:])
