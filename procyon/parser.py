@@ -54,10 +54,10 @@ precedence = (
 def p_error(p):
     if p is None:
         raise ProcyonSyntaxError(
-            (-1, -1, 'Unexpected end of input; unbalanced parenthesis or missing argument(s)?'))
+            (-1, -1, 'unexpected end of input; unbalanced parenthesis or missing argument(s)?'))
     else:
         raise ProcyonSyntaxError(
-            (p.lineno, column(p), 'Unexpected {}({})'.format(
+            (p.lineno, column(p), 'unexpected {}({})'.format(
                 p.type, p.value)))
 
 ###

@@ -16,8 +16,9 @@ def usage():
 Usage: {} <file.pr>""".format(VERSION, DATE, sys.argv[0]), file=sys.stderr)
 
 def print_error_pos(line, pos):
+    whitespace = re.sub(r'[^\t]', " ", line[:pos])
     print(line)
-    print(" " * (pos - 1) + "^")
+    print(whitespace[:-1] + "^")
 
 def read_file(filename):
     """ Read a file, and return its contents. """
