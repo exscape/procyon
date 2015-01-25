@@ -4,6 +4,8 @@
 
 from .lexer import tokens, column
 from .common import ProcyonSyntaxError
+from .ast import (Node, Value, Ident, BinaryOp, UnaryOp, Function, Conditional,
+                  While, FunctionCall, ControlFlowStatement, Comparison)
 
 #
 # Procyon parser definitions.
@@ -50,14 +52,21 @@ precedence = (
     ("right", "EXPONENT"),
 )
 
-# Throw exceptions on parse errors
+def pos(p, index):
+    """ Find position for the AST. Returns a (line, col) tuple, given a parse tree and an index. """
+    line = p.lineno(index)
+    col = column(p.lexer.lexdata, p.lexpos(index))
+
+    return (line, col)
+
+# Raise exceptions on parse errors
 def p_error(p):
     if p is None:
         raise ProcyonSyntaxError(
             (-1, -1, 'unexpected end of input; unbalanced parenthesis or missing argument(s)?'))
     else:
         raise ProcyonSyntaxError(
-            (p.lineno, column(p), 'unexpected {}({})'.format(
+            (p.lineno, column(p.lexer.lexdata, p.lexpos), 'unexpected {}({})'.format(
                 p.type, p.value)))
 
 ###
@@ -85,7 +94,7 @@ def p_exp_binop(p):
            | exp EXPONENT exp
            | exp REMAINDER exp'''
 
-    p[0] = ("binop", p[1], p[2], p[3])
+    p[0] = BinaryOp(pos(p, 2), "math", p[1], p[3], p[2])
 
 # a += 5 style rules; these are right-associative expressions,
 # such that "a = 2; b = 10; a += b -= 4" sets b = 6 and a = 8.
@@ -98,12 +107,13 @@ def p_exp_binop_assign(p):
            | ident ASSIGN_EXPONENT exp
            | ident ASSIGN_REMAINDER exp
            | ident ASSIGN_INTDIVIDE exp'''
-    p[0] = ("assign", p[1], ("binop", p[1], p[2][:-1], p[3]))
+    op = BinaryOp(pos(p, 2), "math", p[1], p[3], p[2][:-1])
+    p[0] = BinaryOp(pos(p, 2), "assign", p[1], op, '=')
 
 # !
 def p_exp_not(p):
     'exp : NOT exp'
-    p[0] = ("not", p[2])
+    p[0] = UnaryOp(pos(p, 1), '!', p[2])
 
 # Unary minus is a special case, since it uses the same operand
 # as a - b, yet this minus sign has much higher precedence, and is
@@ -111,7 +121,7 @@ def p_exp_not(p):
 def p_exp_uminus(p):
     'exp : MINUS exp %prec UMINUS'
     # Matches -exp and uses precedence UMINUS instead of the usual MINUS
-    p[0] = ("uminus", p[2])
+    p[0] = UnaryOp(pos(p, 1), '-', p[2])
 
 ##
 ### COMPARISONS
@@ -139,7 +149,7 @@ def p_comp_one(p):
             | exp GT exp
             | exp GE exp'''
 
-    p[0] = ("comp", [p[1], p[2], p[3]])
+    p[0] = Comparison(pos(p, 2), [p[1], p[2], p[3]])
 
 # Handle chained comparisons such as a > b > c, a < b <= c > d != e, and so on.
 # The rule above is always executed first. For the example of a > b > c == d:
@@ -158,7 +168,7 @@ def p_comp_chained(p):
             | comp GT exp
             | comp GE exp'''
 
-    p[0] = ("comp", p[1][1] + [p[2], p[3]])
+    p[0] = Comparison(pos(p, 2), p[1].contents + [p[2], p[3]])
 
 ##
 ### EXPRESSIONS
@@ -176,7 +186,7 @@ def p_exp_logical(p):
     '''exp : exp OROR exp
            | exp ANDAND exp'''
 
-    p[0] = ("logical", p[1], p[2], p[3])
+    p[0] = BinaryOp(pos(p, 2), "logical", p[1], p[3], p[2])
 
 # Comparisons are expressions
 # We want them to have a lower precedence than expressions,
@@ -191,16 +201,16 @@ def p_exp_num(p):
            | HEX
            | OCT
            | BIN'''
-    p[0] = ("int", p[1])
+    p[0] = Value(pos(p, 1), "int", p[1])
 
 def p_exp_string(p):
     'exp : STRING'
-    p[0] = ("string", p[1])
+    p[0] = Value(pos(p, 1), "string", p[1])
 
 # Floats are stored differently than ints
 def p_exp_float(p):
     'exp : FLOAT'
-    p[0] = ("float", p[1])
+    p[0] = Value(pos(p, 1), "float", p[1])
 
 # Identifiers can be expressions (e.g. variables); the interpreter later
 # checks whether they make sense or not (since e.g. function names
@@ -212,7 +222,7 @@ def p_exp_ident(p):
 # Function calls are expressions (their return values are, at least!)
 def p_exp_call(p):
     'exp : ident LPAREN optargs RPAREN'
-    p[0] = ("call", p[1], p[3])
+    p[0] = FunctionCall(pos(p, 1), p[1], p[3])
 
 def p_optargs_none(p):
     'optargs : '
@@ -289,16 +299,21 @@ def p_statement_if_if_else(p):
         [('b', 'b_body'), ('c', 'c_body')]
 
         This function takes that, combined with neither_body, and eventually returns this:
-        ("if", b, b_body, ("if", c, c_body, neither_body))
+        Conditional(pos, b, b_body, Conditional(c, c_body, neither_body))
 
         Finally, that is added to the "else" position of the partial parse tree, in the
         parent of this function.
         """
 
+        nonlocal p
+
         if len(elseifs) == 0:
             return neither_body
         else:
-            return [tuple(("if", elseifs[0][0], elseifs[0][1], to_tree(elseifs[1:], neither_body)))]
+            # TODO: the position information should really not be for p[1], but for the specific
+            # TODO: else if clause
+            return [Conditional(pos(p, 1), elseifs[0][0], elseifs[0][1],
+                    to_tree(elseifs[1:], neither_body))]
 
     # If this fails, there simply was no final "else { }" block, in which case
     # we WANT last_else_block to be None.
@@ -309,7 +324,7 @@ def p_statement_if_if_else(p):
         pass
 
     else_ifs = to_tree(p[4], last_else_block)
-    p[0] = ('if', p[2], p[3], else_ifs)  # exp, block and the processed else_if_blocks
+    p[0] = Conditional(pos(p, 1), p[2], p[3], else_ifs)
 
 # These two rules together give us, for "else if b { b_body } else if c { c_body }":
 # [(b, b_body), (c, c_body)]
@@ -325,31 +340,31 @@ def p_else_if_blocks_none(p):
 # f(a, b) if x > y;
 def p_single_statement_if(p):
     'statement : statement IF exp'
-    p[0] = ("if", p[3], [p[1]], None)
+    p[0] = Conditional(pos(p, 2), p[3], [p[1]], None)
 
 def p_statement_while(p):
     'block_statement : WHILE exp block'
-    p[0] = ('while', p[2], p[3])
+    p[0] = While(pos(p, 1), p[2], p[3])
 
 def p_statement_break(p):
     'statement : BREAK'
-    p[0] = ('break',)
+    p[0] = ControlFlowStatement(pos(p, 1), "break")
 
 def p_statement_continue(p):
     'statement : CONTINUE'
-    p[0] = ('continue',)
+    p[0] = ControlFlowStatement(pos(p, 1), "continue")
 
 def p_statement_func(p):
     'block_statement : FUNC ident LPAREN optargs RPAREN block'
-    p[0] = ("func", p[2], p[4], p[6])
+    p[0] = Function(pos(p, 1), p[2], p[4], p[6])
 
 def p_statement_return(p):
     'statement : RETURN'
-    p[0] = ("return", None)
+    p[0] = ControlFlowStatement(pos(p, 1), "return", None)
 
 def p_statement_return_arg(p):
     'statement : RETURN exp'
-    p[0] = ("return", p[2])
+    p[0] = ControlFlowStatement(pos(p, 1), "return", p[2])
 
 def p_statement_exp(p):
     'statement : exp'
@@ -362,9 +377,9 @@ def p_statement_exp(p):
 # Simple enough.
 def p_ident(p):
     'ident : IDENT'
-    p[0] = ("ident", p[1])
+    p[0] = Ident(pos(p, 1), p[1])
 
 # e.g. some_var = (2+3)^2; this is an expression that returns exp
 def p_assign(p):
     'exp : ident ASSIGN exp'
-    p[0] = ("assign", p[1], p[3])
+    p[0] = BinaryOp(pos(p, 2), "assign", p[1], p[3], '=')

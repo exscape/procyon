@@ -6,5 +6,6 @@ exclude_lines =
 	ignore coverage
 	if DEBUGPARSE
 	raise ProcyonInternalError
+	__repr__
 
 show_missing = True

@@ -120,14 +120,14 @@ def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
 
-def column(token):
-    """ Calculate the (1-indexed) column number for a given token. """
-    last_cr = token.lexer.lexdata.rfind('\n', 0, token.lexpos)
+def column(lexdata, lexpos):
+    """ Calculate the (1-indexed) column number given the input data and the current position. """
+    last_cr = lexdata.rfind('\n', 0, lexpos)
     if last_cr < 0:
-        return token.lexpos + 1
+        return lexpos + 1
     else:
-        return token.lexpos - last_cr
+        return lexpos - last_cr
 
 def t_error(t):
-    raise ProcyonSyntaxError((t.lineno, column(t), 'unexpected {}'.format(
+    raise ProcyonSyntaxError((t.lineno, column(t.lexer.lexdata, t.lexpos), 'unexpected {}'.format(
         t.value[0])))

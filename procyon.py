@@ -198,21 +198,17 @@ while True:
             else:
                 print("Syntax error: {}: {}".format(filename, ex_msg))
 
-        if filetype == "import":
-            filename = None
-            filetype = "repl"
-
     except ProcyonInternalError as e:
         print("BUG:", str(e))
         _exit(1)
     except ProcyonControlFlowException as e:
         keep_going = False
-        type = e.args[0]["type"]
-        if type == "abort":
+        t = e.args[0]["type"]
+        if t == "abort":
             print("abort() called")
         else:
             print("Error: {} called outside of a {}".format(
-                type, "function" if type == "return" else "loop"))
+                t, "function" if t == "return" else "loop"))
     except ProcyonNameError as e:
         keep_going = False
         print("Name error: {}".format(str(e)))
@@ -224,6 +220,6 @@ while True:
         print("Type error: {}".format(str(e)))
     finally:
         if filename and filetype == "arg":
-            # If we get here, an exception was thrown, or else
+            # If we get here, an exception was raised, or else
             # we would have exited with status 0 previously.
             sys.exit(1)

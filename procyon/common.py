@@ -15,8 +15,8 @@ class ProcyonException(Exception):
 class ProcyonSyntaxError(ProcyonException):
     """ Raised when the lexer/parser detects a syntax error.
 
-        The exception message contains the line and column number where the error
-        was detected, in the format line:column (both counting from 1).
+        The exception contains the line and column number where the error
+        was detected; args[0] contains the tuple (line, pos, message_string).
     """
     pass
 
