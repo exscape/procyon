@@ -29,3 +29,6 @@ def test_euler_3():
     res = euler(3)
     assert res == 6857
     assert type(res) is int
+
+def test_euler_6():
+    assert euler(6) == 25164150

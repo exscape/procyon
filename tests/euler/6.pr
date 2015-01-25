@@ -1,0 +1,40 @@
+# The sum of the squares of the first ten natural numbers is,
+# 1^2 + 2^2 + ... + 10^2 = 385
+#
+# The square of the sum of the first ten natural numbers is,
+# (1 + 2 + ... + 10)^2 = 55^2 = 3025
+#
+# Hence the difference between the sum of the squares of the first ten natural numbers and
+# the square of the sum is 3025 − 385 = 2640.
+#
+# Find the difference between the sum of the squares of the first one hundred natural numbers and
+# the square of the sum.
+#
+# NOTE: the problem statement appears to be backwards, as the expected answer is really
+# the negative of what they actually ask for.
+# The example is also backwards; the difference between sum(squares) and square(sum) is -2640,
+# not 2640.
+
+func sum_sq(n) {
+    sum = 0;
+    while n > 0 {
+        sum += n^2;
+        n -= 1;
+    }
+
+    return sum;
+}
+
+func sq_sum(n) {
+    sum = 0;
+    while n > 0 {
+        sum += n;
+        n -= 1;
+    }
+
+    return sum^2;
+}
+
+ans = sq_sum(100) - sum_sq(100);
+print(ans);
+ans;
