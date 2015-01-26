@@ -129,5 +129,5 @@ def column(lexdata, lexpos):
         return lexpos - last_cr
 
 def t_error(t):
-    raise ProcyonSyntaxError((t.lineno, column(t.lexer.lexdata, t.lexpos), 'unexpected {}'.format(
-        t.value[0])))
+    raise ProcyonSyntaxError((t.lineno, column(t.lexer.lexdata, t.lexpos)),
+                             'unexpected {}'.format(t.value[0]))

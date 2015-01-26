@@ -5,19 +5,19 @@
 import re
 import codecs
 
-VERSION = '0.15a'
-DATE = '2015-01-25'
+VERSION = '0.16a'
+DATE = '2015-01-27'
 DEBUGPARSE = 0
 
 class ProcyonException(Exception):
-    """ Base exception for all Procyon exceptions. """
+    """ Base exception for all Procyon exceptions.
+
+        Where applicable, exceptions have two arguments, and are created
+        like so: raise ProcyonNameError((line, col), "Message")
+    """
 
 class ProcyonSyntaxError(ProcyonException):
-    """ Raised when the lexer/parser detects a syntax error.
-
-        The exception contains the line and column number where the error
-        was detected; args[0] contains the tuple (line, pos, message_string).
-    """
+    """ Raised when the lexer/parser detects a syntax error. """
     pass
 
 class ProcyonInternalError(ProcyonException):
@@ -36,9 +36,9 @@ class ProcyonTypeError(ProcyonException):
 class ProcyonControlFlowException(ProcyonException):
     """ Raised by return, break, continue and abort(); exception arguments show the type.
 
-    args[0] is a dictionary with one or two entries.
-    "type": "return" | "break" | "continue" | "abort", and if type is "return",
-    also a key named "value" holding the function's return value.
+        args[0] is a dictionary with one or two entries.
+        "type": "return" | "break" | "continue" | "abort", and if type is "return",
+        also a key named "value" holding the function's return value.
     """
     pass
 

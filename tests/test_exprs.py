@@ -185,6 +185,22 @@ def test_comparisons_3():
     assert ev("!!2^4 >= 0 > -(2^3) == -8") == [1]
     assert ev("((34 == 30 + 4) == 1) == 0") == [0]
 
+def test_comparisons_4():
+    assert ev("1.999 < 2") == [1]
+    assert ev("1.999 <= 2") == [1]
+    assert ev("1.999 > 2") == [0]
+    assert ev("1.999 >= 2") == [0]
+    assert ev("2 < 1.999") == [0]
+    assert ev("2 <= 1.999") == [0]
+    assert ev("2 > 1.999") == [1]
+    assert ev("2 >= 1.999") == [1]
+
+def test_comparison_fail():
+    with pytest.raises(ProcyonTypeError):
+        ev('1.4 > "test"')
+    with pytest.raises(ProcyonTypeError):
+        ev('"test" > 1.4')
+
 def test_exceptions_1():
     with pytest.raises(ProcyonSyntaxError):
         # Multiline to test a code path in the lexer.

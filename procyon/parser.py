@@ -5,7 +5,7 @@
 from .lexer import tokens, column
 from .common import ProcyonSyntaxError
 from .ast import (Node, Value, Ident, BinaryOp, UnaryOp, Function, Conditional,
-                  While, FunctionCall, ControlFlowStatement, Comparison)
+                  While, FunctionCall, ControlFlowStatement, Comparison, ComparisonOp)
 
 #
 # Procyon parser definitions.
@@ -63,11 +63,11 @@ def pos(p, index):
 def p_error(p):
     if p is None:
         raise ProcyonSyntaxError(
-            (-1, -1, 'unexpected end of input; unbalanced parenthesis or missing argument(s)?'))
+            (-1, -1), 'unexpected end of input; unbalanced parenthesis or missing argument(s)?')
     else:
         raise ProcyonSyntaxError(
-            (p.lineno, column(p.lexer.lexdata, p.lexpos), 'unexpected {}({})'.format(
-                p.type, p.value)))
+            (p.lineno, column(p.lexer.lexdata, p.lexpos)),
+            'unexpected {}({})'.format(p.type, p.value))
 
 ###
 ### TOP LEVEL ELEMENTS
@@ -149,7 +149,8 @@ def p_comp_one(p):
             | exp GT exp
             | exp GE exp'''
 
-    p[0] = Comparison(pos(p, 2), [p[1], p[2], p[3]])
+    op = ComparisonOp(pos(p, 2), p[2])
+    p[0] = Comparison(pos(p, 2), [p[1], op, p[3]])
 
 # Handle chained comparisons such as a > b > c, a < b <= c > d != e, and so on.
 # The rule above is always executed first. For the example of a > b > c == d:
@@ -168,7 +169,8 @@ def p_comp_chained(p):
             | comp GT exp
             | comp GE exp'''
 
-    p[0] = Comparison(pos(p, 2), p[1].contents + [p[2], p[3]])
+    op = ComparisonOp(pos(p, 2), p[2])
+    p[0] = Comparison(pos(p, 2), p[1].contents + [op, p[3]])
 
 ##
 ### EXPRESSIONS

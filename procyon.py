@@ -18,10 +18,21 @@ def usage():
     print("""Procyon interpreter version {}, {}
 Usage: {} <file.pr>""".format(VERSION, DATE, sys.argv[0]), file=sys.stderr)
 
-def print_error_pos(line, pos):
-    whitespace = re.sub(r'[^\t]', " ", line[:pos])
-    print(line)
-    print(whitespace[:-1] + "^")
+def print_error_pos(e):
+    """ Prints out the line that caused an error, with a ^ pointing to the error location. """
+
+    try:
+        (lineno, pos) = e.args[0]
+        ex_msg = e.args[1]
+    except:
+        return
+
+    if lineno > 0 and pos > 0:
+        line = program.split('\n')[lineno-1]
+        whitespace = re.sub(r'[^\t]', " ", line[:pos])
+        print(line)
+        loc = " {}:{}:{}".format(filename if filename else "<repl>", lineno, pos)
+        print(whitespace[:-1] + "^" + loc)
 
 def read_file(filename):
     """ Read a file, and return its contents. """
@@ -180,12 +191,13 @@ while True:
             print("\n".join([str(r) for r in results if r is not None]))
 
     except ProcyonSyntaxError as e:
-        (lineno, pos, ex_msg) = e.args[0]
+        print_error_pos(e)
         keep_going = False
 
+        (lineno, pos) = e.args[0]
+        ex_msg = e.args[1]
+
         if lineno > 0 and pos > 0:
-            line = program.split('\n')[lineno-1]
-            print_error_pos(line, pos)
             print("Syntax error: {} at {}:{}:{}".format(
                 ex_msg, filename if filename else "<repl>", lineno, pos))
         else:
@@ -203,23 +215,24 @@ while True:
         _exit(1)
     except ProcyonControlFlowException as e:
         keep_going = False
-        t = e.args[0]["type"]
+        t = e.args[1]["type"]
         if t == "abort":
             print("abort() called")
         else:
+            print_error_pos(e)
             print("Error: {} called outside of a {}".format(
                 t, "function" if t == "return" else "loop"))
     except ProcyonNameError as e:
         keep_going = False
-        print("Name error: {}".format(str(e)))
+        print_error_pos(e)
+        print("Name error: {}".format(e.args[1]))
     except OverflowError:
         keep_going = False
         print("Overflow: result is out of range")
     except ProcyonTypeError as e:
         keep_going = False
-        print("Type error: {}".format(str(e)))
+        print_error_pos(e)
+        print("Type error: {}".format(e.args[1]))
     finally:
-        if filename and filetype == "arg":
-            # If we get here, an exception was raised, or else
-            # we would have exited with status 0 previously.
-            sys.exit(1)
+        if filetype == "arg" and filename:
+            sys.exit(0)  # TODO: exit code is not reliable; we can get here with errors, too

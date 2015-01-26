@@ -33,7 +33,9 @@ class Ident(Node):
 class BinaryOp(Node):
     """ Represents all operations with a left side, an operator, and a right side.
 
-        Comparisons are excluded, because they need to follow different rules;
+        Comparisons are excluded, because they need to follow different rules,
+        and do not even always HAVE a left side and a right side. See Comparison below.
+
         a - b - c is ((a - b) - c), but a == b == c is NOT ((a == b) == c).
         In the example above,
         a == b is a comparison which returns 0 or 1, which is tested against c.
@@ -73,6 +75,21 @@ class Comparison(Node):
 
     def __repr__(self):
         return "(comp: " + " ".join([str(x) for x in self.contents]) + ")"
+
+class ComparisonOp(Node):
+    """ Represents a single comparison operator.
+
+    BinaryOp is not used to avoid confusion; if that WAS used, the left+right sides would have
+    to be set, but ignored; comparisons don't have left/right sides, since they can be
+    comprised of multiple comparison operators.
+    """
+
+    def __init__(self, pos, op):
+        self.pos = pos
+        self.op = op
+
+    def __repr__(self):
+        return str(self.op)
 
 class UnaryOp(Node):
     """ Represents a unary operation, such as !arg and -arg. """

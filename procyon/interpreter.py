@@ -8,7 +8,7 @@ from ply import lex, yacc
 from .common import *  # decode_escapes, VERSION, DATE and exceptions, mostly
 from . import lexer, parser
 from .ast import (Node, Value, Ident, BinaryOp, UnaryOp, Function, Conditional,
-                  While, FunctionCall, ControlFlowStatement, Comparison)
+                  While, FunctionCall, ControlFlowStatement, Comparison, ComparisonOp)
 
 __all__ = ['evaluate', 'evaluate_command', 'evaluate_file']
 
@@ -97,15 +97,17 @@ def _read_var(scope, var):
         they are simply stored in the global scope.
     """
 
-    if var[0] == '$':
+    name = var.name
+
+    if name[0] == '$':
         try:
-            return __global_scope[1][var]
+            return __global_scope[1][name]
         except KeyError:
-            raise ProcyonNameError('unknown identifier "{}"'.format(var))
+            raise ProcyonNameError(var.pos, 'unknown identifier "{}"'.format(name))
     else:
         try:
             # Try this scope first...
-            return scope[1][var]
+            return scope[1][name]
         except KeyError:
             # Well, that didn't work. What about the outer/parent scope?
             if scope[0] is not None:
@@ -113,7 +115,7 @@ def _read_var(scope, var):
                 return _read_var(scope[0], var)
             else:
                 # There is no parent scope, and we still haven't found it. Give up.
-                raise ProcyonNameError('unknown identifier "{}"'.format(var))
+                raise ProcyonNameError(var.pos, 'unknown identifier "{}"'.format(name))
 
 def _assign_var(scope, var, value):
     """ Set a variable in a given scope. Returns the value that was assigned.
@@ -224,11 +226,12 @@ def _evaluate_tree(tree, scope):
 
             if type(left) != type(right) and not (
                     type(left) in (int, float) and type(right) in (int, float)):
-                raise ProcyonTypeError("binary operation on expressions of different types: "
-                                       "{} {} {}".format(left, op, right))
+                raise ProcyonTypeError(
+                    tree.pos, "binary operation on expressions of different types: "
+                    "{} {} {}".format(left, op, right))
 
             if type(left) is str and type(right) is str and op != '+':
-                raise ProcyonTypeError("operator {} is not defined on strings".format(op))
+                raise ProcyonTypeError(tree.pos, "operator {} is not defined on strings".format(op))
 
             if op == '+':
                 return left + right
@@ -274,7 +277,8 @@ def _evaluate_tree(tree, scope):
             name = tree.left.name
 
             if name in __functions:
-                raise ProcyonTypeError('cannot assign to built-in function "{}"'.format(name))
+                raise ProcyonTypeError(
+                    tree.left.pos, 'cannot assign to built-in function "{}"'.format(name))
 
             val = tree.right
             return _assign_var(scope, name, _evaluate_tree(val, scope))
@@ -297,9 +301,18 @@ def _evaluate_tree(tree, scope):
             for i in range(0, len(l) - 1, 2):
                 yield l[i:i+3]
 
-        def comp_one(left, op, right):
-            left = _evaluate_tree(left, scope)
-            right = _evaluate_tree(right, scope)
+        def comp_one(left_tree, op_node, right_tree):
+            left = _evaluate_tree(left_tree, scope)
+            right = _evaluate_tree(right_tree, scope)
+
+            if type(left) != type(right) and not (
+                    type(left) in (int, float) and type(right) in (int, float)):
+                raise ProcyonTypeError(
+                    op_node.pos, "comparison between incompatible types: "
+                    "{} {} {}".format(left, op_node.op, right))
+
+            op = op_node.op
+
             if op == '==':
                 return int(left == right)
             elif op == '!=':
@@ -321,45 +334,48 @@ def _evaluate_tree(tree, scope):
 
     elif isinstance(tree, Ident):
         if tree.name in __functions:
-            raise ProcyonTypeError("can't use built-in function \"{}\" as a variable".format(
-                tree.name))
+            raise ProcyonTypeError(
+                tree.pos, "can't use built-in function \"{}\" as a variable".format(tree.name))
 
         try:
-            return _read_var(scope, tree.name)
+            return _read_var(scope, tree)
         except ProcyonNameError:
-            raise ProcyonNameError('unknown identifier "{}"'.format(tree.name))
+            raise ProcyonNameError(tree.pos, 'unknown identifier "{}"'.format(tree.name))
 
     elif isinstance(tree, FunctionCall):
-        func_name = tree.func_name.name
+        func_ident = tree.func_name
+        func_name = func_ident.name
         args = tree.args
 
         if func_name == "abort":
             # Bit of a hack, but hey... This can't really be implemented
             # as an actual function, so it has to be some sort of special case.
-            raise ProcyonControlFlowException({"type": "abort"})
+            raise ProcyonControlFlowException(func_ident.pos, {"type": "abort"})
 
-        if func_name not in __functions and not _var_exists(scope, func_name):
-            raise ProcyonNameError('unknown function "{}"'.format(func_name))
+        if func_name not in __functions and not _var_exists(scope, func_ident):
+            raise ProcyonNameError(func_ident.pos, 'unknown function "{}"'.format(func_name))
 
         # OK, so it exists either as a built-in (__functions) or a user-defined function.
         # Check if it's user-defined, first:
 
-        if _var_exists(scope, func_name):
-            f = _read_var(scope, func_name)
+        if _var_exists(scope, func_ident):
+            f = _read_var(scope, func_ident)
             if isinstance(f, Function):
                 return _evaluate_function(f, args, scope)
             else:
-                raise ProcyonTypeError('attempted to call non-function "{}"'.format(func_name))
+                raise ProcyonTypeError(
+                    func_ident.pos, 'attempted to call non-function "{}"'.format(func_name))
 
-        assert not _var_exists(scope, func_name)
+        assert not _var_exists(scope, func_ident)
         assert func_name in __functions
 
         # If we got here, the function is a Python function,
         # either from math, or a built-in (abs, round, print and possibly others).
 
         if __functions[func_name] > 0 and len(args) != __functions[func_name]:
-            raise ProcyonTypeError('{} requires exactly {} arguments, {} provided'.format(
-                func_name, __functions[func_name], len(args)))
+            raise ProcyonTypeError(
+                func_ident.pos, '{} requires exactly {} arguments, {} provided'.format(
+                    func_name, __functions[func_name], len(args)))
 
         args = [_evaluate_tree(arg, scope) for arg in args]
 
@@ -397,7 +413,7 @@ def _evaluate_tree(tree, scope):
             except ProcyonControlFlowException as ex:
                 # I'd like to call this variable "type", but that didn't work out too well...
                 # (Python's type() function stopped working elsewhere :-)
-                t = ex.args[0]["type"]
+                t = ex.args[1]["type"]
                 if t == "break":
                     return None
                 elif t == "continue":
@@ -409,13 +425,13 @@ def _evaluate_tree(tree, scope):
 
     elif isinstance(tree, ControlFlowStatement):
         if tree.kind in ("break", "continue"):
-            raise ProcyonControlFlowException({"type": tree.kind})
+            raise ProcyonControlFlowException(tree.pos, {"type": tree.kind})
         elif tree.kind == "return":
             if tree.arg is not None:
                 val = _evaluate_tree(tree.arg, scope)
-                raise ProcyonControlFlowException({"type": "return", "value": val})
+                raise ProcyonControlFlowException(tree.pos, {"type": "return", "value": val})
             else:
-                raise ProcyonControlFlowException({"type": "return", "value": None})
+                raise ProcyonControlFlowException(tree.pos, {"type": "return", "value": None})
 
     elif isinstance(tree, Function):
         # We ran across a function definition. Bind its set of statements etc. to
@@ -423,7 +439,8 @@ def _evaluate_tree(tree, scope):
         name = tree.name.name
 
         if name in __functions:
-            raise ProcyonTypeError('cannot ovewrite built-in function "{}"'.format(name))
+            raise ProcyonTypeError(
+                tree.name.pos, 'cannot ovewrite built-in function "{}"'.format(name))
 
         _assign_var(scope, name, tree)
 
@@ -446,7 +463,7 @@ def _evaluate_function(func, args, scope):
 
     if len(args) != len(params):
         raise ProcyonTypeError(
-            'attempted to call {}() with {} argument{}, exactly {} required'.format(
+            name.pos, 'attempted to call {}() with {} argument{}, exactly {} required'.format(
                 name, len(args), "s" if len(args) != 1 else "", len(params)))
 
     # Evaluate arguments in the *calling* scope!
@@ -456,7 +473,7 @@ def _evaluate_function(func, args, scope):
         func_scope = _new_scope(scope, params, args)
         _evaluate_all(body, func_scope)
     except ProcyonControlFlowException as ex:
-        args = ex.args[0]
+        args = ex.args[1]
         if args["type"] == "return":
             return args["value"]
         else:
@@ -508,4 +525,4 @@ def evaluate_command(cmd):  # ignore coverage
             print("Usage: .import <file.py>")
 
     else:
-        raise ProcyonNameError("unknown command {}".format(cmd_name))
+        raise ProcyonNameError((-1, -1), "unknown command {}".format(cmd_name))
