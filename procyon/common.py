@@ -13,7 +13,7 @@ class ProcyonException(Exception):
     """ Base exception for all Procyon exceptions.
 
         Where applicable, exceptions have two arguments, and are created
-        like so: raise ProcyonNameError((line, col), "Message")
+        like so: raise ProcyonNameError((line, col), "message")
     """
 
 class ProcyonSyntaxError(ProcyonException):

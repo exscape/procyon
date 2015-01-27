@@ -48,12 +48,12 @@ def read_file(filename):
 def complete(text, state):
     """ Custom readline completion function for .import commands. """
 
-    def append_slash(f):
-        """ Add a slash to the end of directory names. """
+    def append_ending(f):
+        """ Add a slash to the end of directory names, and a space to file names. """
         if S_ISDIR(os.stat(f).st_mode):
             return f + "/"
         else:
-            return f
+            return f + " "
 
     line = readline.get_line_buffer()
 
@@ -63,11 +63,11 @@ def complete(text, state):
         text = "" if re.match("^\s*$", text) else text
         return [text + "\t", None][state]
 
-    # Grab a list of all relevant files, add slashes if they're directories,
+    # Grab a list of all relevant files, add slashes/spaces,
     # and append the None so that readline knows when to stop calling us.
     text = os.path.expanduser(text)  # expand ~
     files = glob.glob(text + '*')
-    files = [append_slash(f) for f in files]
+    files = [append_ending(f) for f in files]
     files.append(None)
     return files[state]
 

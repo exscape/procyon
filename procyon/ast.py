@@ -79,7 +79,7 @@ class Comparison(Node):
 class ComparisonOp(Node):
     """ Represents a single comparison operator.
 
-    BinaryOp is not used to avoid confusion; if that WAS used, the left+right sides would have
+    BinaryOp is not used to avoid confusion; if that were used, the left+right sides would have
     to be set, but ignored; comparisons don't have left/right sides, since they can be
     comprised of multiple comparison operators.
     """
