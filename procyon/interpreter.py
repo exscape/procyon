@@ -151,7 +151,8 @@ __functions = {'sin': 1, 'cos': 1, 'tan': 1,
                'sinh': 1, 'cosh': 1, 'tanh': 1,
                'asinh': 1, 'acosh': 1, 'atanh': 1,
                'abs': 1, 'sqrt': 1, 'ceil': 1, 'floor': 1,
-               'trunc': 1, 'round': 2, 'print': -1, 'abort': 0}
+               'trunc': 1, 'round': 2, 'print': -1, 'abort': 0,
+               'input_str': 1, 'input_int': 1, 'input_float': 1}
 
 def _init_global_scope():
     global __global_scope
@@ -379,6 +380,9 @@ def _evaluate_tree(tree, scope):
 
         args = [_evaluate_tree(arg, scope) for arg in args]
 
+        if func_name in ('input_str', 'input_int', 'input_float'):
+            return _handle_input(func_ident, args[0])  # ignore coverage
+
         func = None
         try:
             func = getattr(math, func_name)
@@ -478,6 +482,26 @@ def _evaluate_function(func, args, scope):
             return args["value"]
         else:
             raise  # break or continue called outside of loop, or abort()
+
+def _handle_input(func, prompt):
+    """ Handle input_* calls (int, float and str). """
+
+    type_ = func.name[6:]
+    val = input(prompt)
+
+    if type_ == 'float':
+        try:
+            return float(val)
+        except ValueError:
+            raise ProcyonTypeError(func.pos, "user-entered string is not a valid float")
+    elif type_ == 'int':
+        try:
+            return int(val)
+        except ValueError:
+            raise ProcyonTypeError(func.pos, "user-entered string is not a valid int")
+    else:
+        assert type_ == 'str'
+        return val
 
 def evaluate_command(cmd):  # ignore coverage
     """ Evaluate a command, as entered in the REPL.

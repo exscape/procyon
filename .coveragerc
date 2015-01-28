@@ -7,5 +7,6 @@ exclude_lines =
 	if DEBUGPARSE
 	raise ProcyonInternalError
 	__repr__
+	_handle_input
 
 show_missing = True

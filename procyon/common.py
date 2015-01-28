@@ -5,8 +5,8 @@
 import re
 import codecs
 
-VERSION = '0.16a'
-DATE = '2015-01-27'
+VERSION = '0.16a'  # this changes with no real pattern so far
+DATE = '2015-01-28'
 DEBUGPARSE = 0
 
 class ProcyonException(Exception):
